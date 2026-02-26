@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Stage Layer Map</title>
+  <meta name="description" content="Amber terminal-style UI (inspired, original composition)" />
+  <style>
+    :root{
+      --bg:#06080b;
+      --panel: rgba(0,0,0,.18);
+      --amber:#ffb14a;
+      --amber2:#ff8a2a;
+      --line: rgba(255,177,74,.55);
+      --line2: rgba(255,177,74,.25);
+      --line3: rgba(255,177,74,.12);
+      --green:#39ff7a;
+
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif;
+
+      --glow: 0 0 16px rgba(255,177,74,.22);
+      --glow2: 0 0 26px rgba(255,177,74,.18);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--amber);
+      font-family: var(--mono);
+      background:
+        radial-gradient(1100px 700px at 50% 20%, rgba(255,177,74,.06), transparent 60%),
+        radial-gradient(900px 560px at 30% 60%, rgba(255,177,74,.03), transparent 55%),
+        var(--bg);
+      letter-spacing:.02em;
+    }
+
+    /* CRT overlay */
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      background:
+        repeating-linear-gradient(to bottom,
+          rgba(255,255,255,.03), rgba(255,255,255,.03) 1px,
+          rgba(0,0,0,.00) 2px, rgba(0,0,0,.00) 4px),
+        repeating-linear-gradient(90deg,
+          rgba(255,177,74,.018), rgba(255,177,74,.018) 1px,
+          transparent 2px, transparent 6px),
+        radial-gradient(900px 620px at 50% 45%, rgba(255,177,74,.10), transparent 62%);
+      mix-blend-mode: screen;
+      opacity:.22;
+    }
+    body::after{
+      content:"";
+      position:fixed; inset:-20%;
+      pointer-events:none;
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E");
+      opacity:.09;
+      transform: rotate(.6deg);
+    }
+
+    .wrap{
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 18px 18px 32px;
+    }
+
+    .frame{
+      position:relative;
+      border:2px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,177,74,.028), transparent 40%), var(--panel);
+      box-shadow: 0 26px 100px rgba(0,0,0,.58);
+      padding: 12px;
+      overflow:hidden;
+    }
+    .frame::before{
+      content:"";
+      position:absolute; inset:10px;
+      border:1px solid var(--line2);
+      pointer-events:none;
+    }
+
+    .sideGreen{
+      position:absolute;
+      left: 8px;
+      top: 94px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      font-size: 12px;
+      color: var(--green);
+      opacity:.86;
+      letter-spacing:.10em;
+      text-shadow: 0 0 18px rgba(57,255,122,.20);
+      user-select:none;
+    }
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      font-size:12px;
+      padding: 2px 4px 10px;
+      opacity:.95;
+    }
+    .topbar .right{display:flex; gap:8px; align-items:center}
+    .chip{
+      border:1px solid var(--line);
+      padding: 2px 10px;
+      background: rgba(255,177,74,.06);
+      box-shadow: var(--glow);
+      font-weight:700;
+      letter-spacing:.06em;
+      user-select:none;
+    }
+
+    .headline{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      padding: 6px 4px 12px;
+      border-bottom:1px solid var(--line2);
+      margin-bottom: 12px;
+    }
+    .h1{
+      margin:0;
+      font-family: var(--sans);
+      font-size: 56px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      text-shadow: var(--glow2);
+    }
+    .sub{
+      margin:0 0 6px;
+      font-size: 12px;
+      opacity:.86;
+      text-align:right;
+      max-width: 460px;
+    }
+
+    /* top region layout */
+    .topGrid{
+      display:grid;
+      grid-template-columns: 250px 1fr 250px;
+      grid-template-rows: auto auto;
+      gap: 12px;
+      align-items:stretch;
+    }
+
+    .hexBox{
+      border:1px solid var(--line);
+      background: rgba(255,177,74,.04);
+      padding: 10px 10px 8px;
+      position:relative;
+      overflow:hidden;
+      min-height: 92px;
+    }
+    .hexBox::before{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        linear-gradient(135deg, transparent 0 12px, rgba(255,177,74,.085) 12px 14px, transparent 14px 100%);
+      opacity:.6;
+      pointer-events:none;
+    }
+    .hexTitle{
+      display:flex;
+      justify-content:space-between;
+      align-items:baseline;
+      gap:10px;
+      font-size: 13px;
+      font-weight: 800;
+      font-family: var(--sans);
+      letter-spacing:.01em;
+      text-shadow: var(--glow);
+    }
+    .hexTitle small{
+      font-family: var(--mono);
+      font-weight: 700;
+      opacity:.82;
+      letter-spacing:.03em;
+    }
+    .hexBits{
+      margin-top: 8px;
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:6px 10px;
+      font-size: 12px;
+      opacity:.92;
+    }
+    .hexBits code{
+      display:block;
+      padding: 4px 6px;
+      border:1px solid var(--line2);
+      background: rgba(0,0,0,.18);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* radar area */
+    .radarWrap{
+      grid-column:2;
+      grid-row:1 / span 2;
+      border:1px solid var(--line);
+      background: rgba(255,177,74,.03);
+      padding: 12px;
+      position:relative;
+      overflow:hidden;
+      min-height: 540px;
+    }
+    .radarShell{
+      position:relative;
+      width: min(620px, 100%);
+      aspect-ratio: 1/1;
+      margin: 6px auto 0;
+    }
+    .radarCircle{
+      position:absolute; inset:0;
+      border:2px solid var(--line);
+      border-radius: 50%;
+      overflow:hidden;
+      box-shadow: inset 0 0 0 1px var(--line2), var(--glow2);
+      background:
+        radial-gradient(circle at 50% 50%, rgba(0,0,0,.62) 0 42%, rgba(0,0,0,0) 43%),
+        radial-gradient(circle at 50% 50%, rgba(255,177,74,.06), transparent 64%);
+    }
+    .radarSvg{
+      position:absolute; inset:-2%;
+      width:104%;
+      height:104%;
+      opacity:.95;
+    }
+
+    .stageLabel{
+      position:absolute;
+      font-family: var(--sans);
+      font-weight: 900;
+      text-shadow: var(--glow2);
+      opacity:.95;
+      user-select:none;
+    }
+    .stageSmall{
+      position:absolute;
+      font-size: 12px;
+      opacity:.86;
+      user-select:none;
+      text-shadow: var(--glow);
+    }
+    .stageSmall.left{ left: 22px; top: 142px;}
+    .stageSmall.right{ right: 22px; top: 142px; text-align:right;}
+    .stageL{ left: 22px; top: 176px; font-size: 50px;}
+    .stageR{ right: 22px; top: 176px; font-size: 50px; text-align:right;}
+
+    .center{
+      position:absolute; inset:0;
+      display:grid;
+      place-items:center;
+      pointer-events:none;
+    }
+    .centerBox{
+      width: 54%;
+      aspect-ratio: 1/1;
+      border-radius: 50%;
+      background: rgba(0,0,0,.62);
+      box-shadow: inset 0 0 0 1px var(--line2);
+      display:grid;
+      place-items:center;
+      padding: 14px;
+    }
+    .centerMeta{
+      position:absolute;
+      top: 44%;
+      left:50%;
+      transform: translate(-50%,-50%);
+      width: 60%;
+      display:flex;
+      justify-content:space-between;
+      font-size: 12px;
+      opacity:.92;
+    }
+    .centerMeta span{
+      border:1px solid var(--line2);
+      padding: 2px 6px;
+      background: rgba(255,177,74,.05);
+      box-shadow: var(--glow);
+    }
+
+    .stageMid{
+      position:absolute;
+      top: 32%;
+      left: 50%;
+      transform: translate(-50%,-50%);
+      font-family: var(--sans);
+      font-weight: 900;
+      font-size: 22px;
+      opacity:.92;
+      text-shadow: var(--glow2);
+      letter-spacing:.02em;
+    }
+
+    .percent{
+      font-family: var(--sans);
+      font-weight: 950;
+      font-size: 92px;
+      letter-spacing: -0.03em;
+      text-shadow: 0 0 26px rgba(255,177,74,.26);
+    }
+    .percent small{
+      font-size: 34px;
+      opacity:.95;
+      margin-left: 6px;
+    }
+    .rank{
+      margin-top: 6px;
+      font-size: 14px;
+      opacity:.86;
+    }
+
+    .statusRow{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding: 12px 4px 0;
+      font-size:12px;
+      opacity:.92;
+    }
+
+    /* Decryption Key area */
+    .sectionTitle{
+      margin-top: 12px;
+      padding: 10px 6px 6px;
+      border-top: 1px solid var(--line2);
+      font-family: var(--sans);
+      font-size: 48px;
+      font-weight: 950;
+      letter-spacing:-0.03em;
+      text-shadow: var(--glow2);
+      display:flex;
+      align-items:baseline;
+      gap:12px;
+    }
+    .sectionTitle small{
+      font-size: 12px;
+      font-family: var(--mono);
+      font-weight: 800;
+      opacity:.86;
+      letter-spacing:.02em;
+    }
+
+    .keyArea{
+      display:grid;
+      grid-template-columns: 240px 1fr;
+      gap: 12px;
+      padding: 10px 4px 8px;
+      border-bottom: 1px solid var(--line2);
+      margin-bottom: 10px;
+    }
+
+    .progressBox{
+      border:1px solid var(--line);
+      background: rgba(255,177,74,.03);
+      padding: 10px;
+      position:relative;
+      overflow:hidden;
+    }
+    .progressBox::before{
+      content:"";
+      position:absolute; inset:0;
+      background: linear-gradient(180deg, rgba(255,177,74,.10), transparent 55%);
+      opacity:.55;
+      pointer-events:none;
+    }
+    .progressBox .label{font-size: 12px; opacity:.86}
+    .progressBox .big{
+      font-family: var(--sans);
+      font-weight: 950;
+      font-size: 56px;
+      margin-top: 4px;
+      text-shadow: var(--glow2);
+    }
+    .btnTiny{
+      margin-top: 12px;
+      display:inline-block;
+      padding: 6px 12px;
+      border:1px solid var(--line);
+      background: rgba(255,177,74,.07);
+      font-size: 12px;
+      font-weight: 900;
+      letter-spacing:.08em;
+      box-shadow: var(--glow);
+      user-select:none;
+    }
+
+    .barsWrap{
+      border:1px solid var(--line);
+      background: rgba(0,0,0,.18);
+      padding: 10px;
+      overflow:hidden;
+      position:relative;
+    }
+    .barsHeader{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      opacity:.92;
+    }
+    .bars{
+      display:grid;
+      grid-template-columns: repeat(54, 1fr);
+      gap: 4px;
+      align-items:end;
+      height: 178px;
+      padding: 10px 8px;
+      border-top: 1px solid var(--line2);
+      border-bottom: 1px solid var(--line2);
+      position:relative;
+    }
+    .bars::before{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        repeating-linear-gradient(to bottom,
+          rgba(255,177,74,.10), rgba(255,177,74,.10) 1px,
+          transparent 1px, transparent 24px);
+      opacity:.22;
+      pointer-events:none;
+    }
+    /* two horizontal reference lines like the screenshot */
+    .bars::after{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        linear-gradient(to bottom, transparent 33%, rgba(255,177,74,.28) 33.4%, transparent 33.8%),
+        linear-gradient(to bottom, transparent 66%, rgba(255,177,74,.28) 66.4%, transparent 66.8%);
+      opacity:.55;
+      pointer-events:none;
+    }
+
+    .bar{
+      width:100%;
+      border:1px solid var(--line2);
+      background: linear-gradient(180deg, rgba(255,177,74,.24), rgba(255,177,74,.06));
+      box-shadow: 0 0 12px rgba(255,177,74,.10);
+      height: 20%;
+      transition: height .35s ease;
+    }
+    .bar.dim{
+      background: linear-gradient(180deg, rgba(255,177,74,.12), rgba(255,177,74,.03));
+      opacity:.70;
+    }
+
+    .clusters{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 10px 4px 4px;
+    }
+    .cluster{
+      border:1px solid var(--line);
+      background: rgba(255,177,74,.03);
+      min-height: 92px;
+      padding: 8px 10px;
+      position:relative;
+      overflow:hidden;
+    }
+    .cluster::before{
+      content:"";
+      position:absolute; left:0; top:0; right:0; height: 10px;
+      background: rgba(255,177,74,.06);
+      border-bottom: 1px solid var(--line2);
+      opacity:.8;
+    }
+    .cluster .name{
+      font-family: var(--sans);
+      font-weight: 950;
+      font-size: 13px;
+      letter-spacing:.05em;
+      margin: 6px 0 6px;
+      text-shadow: var(--glow);
+    }
+    .cluster .state{font-size: 12px; opacity:.90}
+    .cluster .tiny{
+      position:absolute;
+      right: 10px;
+      bottom: 8px;
+      font-size: 10px;
+      opacity:.72;
+    }
+
+    .footer{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      padding: 8px 4px 2px;
+      font-size: 12px;
+      opacity:.86;
+    }
+
+    @media (max-width: 980px){
+      .topGrid{grid-template-columns: 1fr; grid-template-rows:auto;}
+      .radarWrap{grid-column:auto; grid-row:auto; min-height:auto}
+      .clusters{grid-template-columns: 1fr 1fr}
+      .h1{font-size: 46px}
+      .sectionTitle{font-size: 40px}
+    }
+    @media (max-width: 560px){
+      .clusters{grid-template-columns: 1fr}
+      .keyArea{grid-template-columns: 1fr}
+      .percent{font-size: 72px}
+    }
+  </style>
+</head>
+
+<body>
+  <main class="wrap">
+    <section class="frame">
+      <div class="sideGreen">L-3E / CONTROL-LINE / ACCESS: RESTRICTED</div>
+
+      <div class="topbar">
+        <div>AM-4 / SHADING CONTROL / SCALING PILLAR</div>
+        <div class="right">
+          <span class="chip">LINK</span>
+          <span class="chip">QUIT</span>
+        </div>
+      </div>
+
+      <header class="headline">
+        <h1 class="h1">Stage Layer Map</h1>
+        <p class="sub">SCALING HEXER PROGRAM // NODE INTERLOCK // TELEMETRY FEED</p>
+      </header>
+
+      <div class="topGrid">
+        <div class="hexBox">
+          <div class="hexTitle">Hexer 01: Decoding<span><small id="t1">…</small></span></div>
+          <div class="hexBits" id="bits1"></div>
+        </div>
+
+        <div class="radarWrap">
+          <div class="radarShell">
+            <div class="radarCircle"></div>
+
+            <!-- build precise rings / arcs / radial lines in SVG -->
+            <svg class="radarSvg" viewBox="-110 -110 220 220" aria-hidden="true">
+              <!-- outer arcs -->
+              <g fill="none" stroke="rgba(255,177,74,.18)" stroke-width="1">
+                <path d="M -102 0 A 102 102 0 0 1 102 0" />
+                <path d="M -96 0 A 96 96 0 0 1 96 0" />
+                <path d="M -90 0 A 90 90 0 0 1 90 0" />
+              </g>
+
+              <!-- concentric rings -->
+              <g fill="none" stroke="rgba(255,177,74,.16)" stroke-width="1">
+                <circle r="92"/><circle r="84"/><circle r="76"/><circle r="68"/>
+                <circle r="60"/><circle r="52"/><circle r="44"/><circle r="36"/>
+                <circle r="28"/><circle r="20"/>
+              </g>
+
+              <!-- radial lines every 15deg -->
+              <g stroke="rgba(255,177,74,.18)" stroke-width="1">
+                <!-- generated by JS? keep static set for stability -->
+                <line x1="0" y1="-96" x2="0" y2="96"/>
+                <line x1="-96" y1="0" x2="96" y2="0"/>
+
+                <g opacity=".9">
+                  <line x1="24.9" y1="-92.7" x2="-24.9" y2="92.7"/>
+                  <line x1="49.6" y1="-82.2" x2="-49.6" y2="82.2"/>
+                  <line x1="70.0" y1="-66.0" x2="-70.0" y2="66.0"/>
+                  <line x1="84.9" y1="-45.4" x2="-84.9" y2="45.4"/>
+                  <line x1="92.7" y1="-24.9" x2="-92.7" y2="24.9"/>
+
+                  <line x1="-24.9" y1="-92.7" x2="24.9" y2="92.7"/>
+                  <line x1="-49.6" y1="-82.2" x2="49.6" y2="82.2"/>
+                  <line x1="-70.0" y1="-66.0" x2="70.0" y2="66.0"/>
+                  <line x1="-84.9" y1="-45.4" x2="84.9" y2="45.4"/>
+                  <line x1="-92.7" y1="-24.9" x2="92.7" y2="24.9"/>
+                </g>
+              </g>
+
+              <!-- tick marks on outer rim -->
+              <g stroke="rgba(255,177,74,.28)" stroke-width="1">
+                <!-- major ticks -->
+                <line x1="0" y1="-96" x2="0" y2="-88"/>
+                <line x1="96" y1="0" x2="88" y2="0"/>
+                <line x1="0" y1="96" x2="0" y2="88"/>
+                <line x1="-96" y1="0" x2="-88" y2="0"/>
+              </g>
+
+              <!-- small numeric labels around -->
+              <g fill="rgba(255,177,74,.55)" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="8" text-anchor="middle">
+                <text x="0" y="-102">0</text>
+                <text x="52" y="-88">15</text>
+                <text x="88" y="-52">30</text>
+                <text x="102" y="0">45</text>
+                <text x="88" y="56">60</text>
+                <text x="52" y="92">75</text>
+                <text x="0" y="106">90</text>
+                <text x="-52" y="92">105</text>
+                <text x="-88" y="56">120</text>
+                <text x="-102" y="0">135</text>
+                <text x="-88" y="-52">150</text>
+                <text x="-52" y="-88">165</text>
+              </g>
+
+              <!-- subtle sweeping wedge -->
+              <defs>
+                <linearGradient id="w" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stop-color="rgba(255,177,74,.00)"/>
+                  <stop offset="1" stop-color="rgba(255,177,74,.10)"/>
+                </linearGradient>
+              </defs>
+              <path id="sweep" d="M0,0 L0,-98 A98,98 0 0,1 45,-87 Z" fill="url(#w)" opacity=".9"/>
+            </svg>
+
+            <div class="stageSmall left">STAGE</div>
+            <div class="stageLabel stageL">04</div>
+            <div class="stageSmall right">STAGE</div>
+            <div class="stageLabel stageR">05</div>
+
+            <div class="center">
+              <div class="centerBox">
+                <div class="stageMid" id="stageMid">STAGE 04</div>
+                <div class="centerMeta">
+                  <span id="secTag">SEC-10</span>
+                  <span id="sideTag">SIDE-B</span>
+                </div>
+                <div class="percent"><span id="pct">03</span><small>%</small></div>
+                <div class="rank">RANK <b id="rank">C</b></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="statusRow">
+            <span class="chip">INTERLINK: NOMINAL</span>
+            <span class="chip" style="opacity:.86;border-color:rgba(255,177,74,.38)">AI SYSTEMS: LOCKED</span>
+          </div>
+        </div>
+
+        <div class="hexBox">
+          <div class="hexTitle">Hexer 02: Decoding<span><small id="t2">…</small></span></div>
+          <div class="hexBits" id="bits2"></div>
+        </div>
+
+        <div class="hexBox">
+          <div class="hexTitle">Hexer 03: Decoding<span><small id="t3">…</small></span></div>
+          <div class="hexBits" id="bits3"></div>
+        </div>
+
+        <div class="hexBox">
+          <div class="hexTitle">Hexer 04: Decoding<span><small id="t4">…</small></span></div>
+          <div class="hexBits" id="bits4"></div>
+        </div>
+      </div>
+
+      <div class="sectionTitle">
+        Decryption Key
+        <small>BLACK VAULT / SCALING PILLAR No.01</small>
+      </div>
+
+      <section class="keyArea">
+        <div class="progressBox">
+          <div class="label">Total Progress</div>
+          <div class="big" id="total">60%</div>
+          <span class="btnTiny">MATCHES</span>
+        </div>
+
+        <div class="barsWrap">
+          <div class="barsHeader">
+            <span>Current Target Cylinders</span>
+            <span>UKM-v7.0.8</span>
+          </div>
+          <div class="bars" id="bars"></div>
+        </div>
+      </section>
+
+      <section class="clusters">
+        <div class="cluster">
+          <div class="name">Cluster-A</div>
+          <div class="state" id="c1">Decrypting Stage 04B</div>
+          <div class="tiny">LINK</div>
+        </div>
+        <div class="cluster">
+          <div class="name">Cluster-B</div>
+          <div class="state" id="c2">Decrypting Stage 04B</div>
+          <div class="tiny">LINK</div>
+        </div>
+        <div class="cluster">
+          <div class="name">Cluster-C</div>
+          <div class="state" id="c3">Decrypting Stage 04B</div>
+          <div class="tiny">LINK</div>
+        </div>
+        <div class="cluster">
+          <div class="name">Cluster-D</div>
+          <div class="state" id="c4">Decrypting Stage 04B</div>
+          <div class="tiny">LINK</div>
+        </div>
+      </section>
+
+      <div class="footer">
+        <span>SESSION: ACTIVE / AUTH: RESTRICTED</span>
+        <span>OPS / MISSION TEAM 01</span>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id)=>document.getElementById(id);
+    const rnd = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+
+    const bits = (n=16)=>{
+      const s=[];
+      for(let i=0;i<n;i++) s.push(String(rnd(0,1)));
+      return s.join(" ");
+    };
+    const dots = (t)=>".".repeat((t%4)+1);
+
+    function fillBits(targetId){
+      const box = $(targetId);
+      if(!box) return;
+      box.innerHTML = "";
+      for(let i=0;i<8;i++){
+        const code = document.createElement("code");
+        code.textContent = bits(8);
+        box.appendChild(code);
+      }
+    }
+    ["bits1","bits2","bits3","bits4"].forEach(fillBits);
+
+    // bars
+    const bars = $("bars");
+    const N = 54;
+    const barEls = [];
+    for(let i=0;i<N;i++){
+      const d = document.createElement("div");
+      d.className = "bar" + (Math.random()<0.30 ? " dim" : "");
+      d.style.height = rnd(10,95) + "%";
+      bars.appendChild(d);
+      barEls.push(d);
+    }
+
+    function calcRank(p){
+      if(p>=85) return "S";
+      if(p>=70) return "A";
+      if(p>=55) return "B";
+      if(p>=35) return "C";
+      return "D";
+    }
+
+    // animate SVG sweep
+    const sweep = document.getElementById("sweep");
+    let ang = 0;
+
+    let tick = 0;
+    setInterval(()=>{
+      tick++;
+
+      // decoding dots
+      $("t1").textContent = "Decrypting" + dots(tick);
+      $("t2").textContent = "Decrypting" + dots(tick+1);
+      $("t3").textContent = "Decrypting" + dots(tick+2);
+      $("t4").textContent = "Decrypting" + dots(tick+3);
+
+      // percent: low value wobble like the screenshot
+      const p = Math.max(0, Math.min(99, Math.round( 3 + Math.sin(tick/6)*2 + (Math.random()*2-1) )));
+      $("pct").textContent = String(p).padStart(2,"0");
+      $("rank").textContent = calcRank(p);
+
+      // stage center text occasional flip
+      if(tick % 12 === 0){
+        const s = (Math.random() < .7) ? "STAGE 04" : "STAGE 05";
+        $("stageMid").textContent = s;
+      }
+
+      // bars drift
+      for(const b of barEls){
+        const cur = parseInt(b.style.height,10) || 30;
+        const drift = rnd(-9,9);
+        b.style.height = Math.max(8, Math.min(98, cur + drift)) + "%";
+      }
+
+      // refresh bits occasionally
+      if(tick % 5 === 0){
+        ["bits1","bits2","bits3","bits4"].forEach(fillBits);
+      }
+
+      // cluster flicker
+      const states = ["Decrypting Stage 04B","Stage Locked","Nominal Sync","Interlock Pending","Key Match: Partial"];
+      ["c1","c2","c3","c4"].forEach((id)=>{
+        if(Math.random()<0.25) $(id).textContent = states[rnd(0,states.length-1)];
+      });
+
+      // sweep rotation
+      ang = (ang + 8) % 360;
+      if(sweep) sweep.setAttribute("transform", `rotate(${ang} 0 0)`);
+
+    }, 650);
+  </script>
+</body>
+</html>
