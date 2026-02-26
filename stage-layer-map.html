@@ -3,8 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Stage Layer Map</title>
-  <meta name="description" content="Amber terminal-style UI (inspired, original composition)" />
+  <title>Sealing Pillar Restoration Console</title>
+  <meta name="description" content="Amber terminal-style UI (inspired, original composition) - multi-pillar compatible" />
   <style>
     :root{
       --bg:#06080b;
@@ -139,7 +139,62 @@
       font-size: 12px;
       opacity:.86;
       text-align:right;
-      max-width: 460px;
+      max-width: 520px;
+    }
+
+    /* inline config panel (terminal-like) */
+    .cfg{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px 14px;
+      align-items:center;
+      padding: 10px 4px 12px;
+      border-bottom: 1px solid var(--line2);
+      margin-bottom: 12px;
+      font-size: 12px;
+      opacity:.96;
+    }
+    .cfg label{
+      display:flex; gap:8px; align-items:center;
+      border:1px solid var(--line2);
+      background: rgba(0,0,0,.18);
+      padding: 6px 8px;
+      box-shadow: var(--glow);
+    }
+    .cfg span{
+      font-family: var(--sans);
+      font-weight: 800;
+      letter-spacing:.02em;
+      opacity:.92;
+      white-space:nowrap;
+    }
+    .cfg select, .cfg input{
+      appearance:none;
+      border:1px solid var(--line2);
+      background: rgba(255,177,74,.06);
+      color: var(--amber);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 6px 8px;
+      outline:none;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
+      min-width: 140px;
+    }
+    .cfg input[type="number"]{min-width: 96px}
+    .cfg .btn{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background: rgba(255,177,74,.07);
+      color: var(--amber);
+      font-family: var(--sans);
+      font-weight: 900;
+      letter-spacing:.08em;
+      padding: 8px 12px;
+      box-shadow: var(--glow);
+    }
+    .cfg .hint{
+      opacity:.76;
+      white-space:nowrap;
     }
 
     /* top region layout */
@@ -433,7 +488,7 @@
       opacity:.22;
       pointer-events:none;
     }
-    /* two horizontal reference lines like the screenshot */
+    /* two horizontal reference lines */
     .bars::after{
       content:"";
       position:absolute; inset:0;
@@ -511,6 +566,8 @@
       .clusters{grid-template-columns: 1fr 1fr}
       .h1{font-size: 46px}
       .sectionTitle{font-size: 40px}
+      .cfg label{width: 100%}
+      .cfg .hint{width: 100%}
     }
     @media (max-width: 560px){
       .clusters{grid-template-columns: 1fr}
@@ -523,20 +580,55 @@
 <body>
   <main class="wrap">
     <section class="frame">
-      <div class="sideGreen">L-3E / CONTROL-LINE / ACCESS: RESTRICTED</div>
+      <div class="sideGreen" id="sideGreen">L-3E / CONTROL-LINE / ACCESS: RESTRICTED</div>
 
       <div class="topbar">
-        <div>AM-4 / SHADING CONTROL / SCALING PILLAR</div>
+        <div id="topbarLeft">AM-4 / SHADING CONTROL / SEALING PILLAR</div>
         <div class="right">
-          <span class="chip">LINK</span>
+          <span class="chip" id="chipLink">LINK</span>
           <span class="chip">QUIT</span>
         </div>
       </div>
 
       <header class="headline">
-        <h1 class="h1">Stage Layer Map</h1>
-        <p class="sub">SCALING HEXER PROGRAM // NODE INTERLOCK // TELEMETRY FEED</p>
+        <h1 class="h1" id="headline">Stage Layer Map</h1>
+        <p class="sub" id="subline">RESTORATION SYSTEM CONTROL // NODE INTERLOCK // TELEMETRY FEED</p>
       </header>
+
+      <div class="cfg" aria-label="console configuration">
+        <label>
+          <span>THEATER</span>
+          <select id="theater">
+            <option value="EU">EU</option>
+            <option value="JP">JP</option>
+            <option value="NA">NA</option>
+            <option value="SA">SA</option>
+            <option value="AF">AF</option>
+            <option value="ME">ME</option>
+            <option value="OC">OC</option>
+            <option value="PAC">PAC</option>
+            <option value="GLOBAL">GLOBAL</option>
+          </select>
+        </label>
+
+        <label>
+          <span>PILLAR No.</span>
+          <input id="pillarNo" type="number" min="1" max="99" value="1" />
+        </label>
+
+        <label>
+          <span>MODE</span>
+          <select id="mode">
+            <option value="RESTORE">RESTORE</option>
+            <option value="RESEAL">RE-SEAL</option>
+            <option value="STABILIZE">STABILIZE</option>
+            <option value="DIAG">DIAG</option>
+          </select>
+        </label>
+
+        <button class="btn" id="apply">APPLY</button>
+        <span class="hint">Tip: URLで固定も可 → <code>?theater=JP&pillar=3&mode=DIAG</code> / Shift+E: Export JSON</span>
+      </div>
 
       <div class="topGrid">
         <div class="hexBox">
@@ -548,28 +640,22 @@
           <div class="radarShell">
             <div class="radarCircle"></div>
 
-            <!-- build precise rings / arcs / radial lines in SVG -->
             <svg class="radarSvg" viewBox="-110 -110 220 220" aria-hidden="true">
-              <!-- outer arcs -->
               <g fill="none" stroke="rgba(255,177,74,.18)" stroke-width="1">
                 <path d="M -102 0 A 102 102 0 0 1 102 0" />
                 <path d="M -96 0 A 96 96 0 0 1 96 0" />
                 <path d="M -90 0 A 90 90 0 0 1 90 0" />
               </g>
 
-              <!-- concentric rings -->
               <g fill="none" stroke="rgba(255,177,74,.16)" stroke-width="1">
                 <circle r="92"/><circle r="84"/><circle r="76"/><circle r="68"/>
                 <circle r="60"/><circle r="52"/><circle r="44"/><circle r="36"/>
                 <circle r="28"/><circle r="20"/>
               </g>
 
-              <!-- radial lines every 15deg -->
               <g stroke="rgba(255,177,74,.18)" stroke-width="1">
-                <!-- generated by JS? keep static set for stability -->
                 <line x1="0" y1="-96" x2="0" y2="96"/>
                 <line x1="-96" y1="0" x2="96" y2="0"/>
-
                 <g opacity=".9">
                   <line x1="24.9" y1="-92.7" x2="-24.9" y2="92.7"/>
                   <line x1="49.6" y1="-82.2" x2="-49.6" y2="82.2"/>
@@ -585,16 +671,13 @@
                 </g>
               </g>
 
-              <!-- tick marks on outer rim -->
               <g stroke="rgba(255,177,74,.28)" stroke-width="1">
-                <!-- major ticks -->
                 <line x1="0" y1="-96" x2="0" y2="-88"/>
                 <line x1="96" y1="0" x2="88" y2="0"/>
                 <line x1="0" y1="96" x2="0" y2="88"/>
                 <line x1="-96" y1="0" x2="-88" y2="0"/>
               </g>
 
-              <!-- small numeric labels around -->
               <g fill="rgba(255,177,74,.55)" font-family="ui-monospace, Menlo, Consolas, monospace" font-size="8" text-anchor="middle">
                 <text x="0" y="-102">0</text>
                 <text x="52" y="-88">15</text>
@@ -610,7 +693,6 @@
                 <text x="-52" y="-88">165</text>
               </g>
 
-              <!-- subtle sweeping wedge -->
               <defs>
                 <linearGradient id="w" x1="0" y1="0" x2="1" y2="0">
                   <stop offset="0" stop-color="rgba(255,177,74,.00)"/>
@@ -621,9 +703,9 @@
             </svg>
 
             <div class="stageSmall left">STAGE</div>
-            <div class="stageLabel stageL">04</div>
+            <div class="stageLabel stageL" id="stageLeft">04</div>
             <div class="stageSmall right">STAGE</div>
-            <div class="stageLabel stageR">05</div>
+            <div class="stageLabel stageR" id="stageRight">05</div>
 
             <div class="center">
               <div class="centerBox">
@@ -639,8 +721,8 @@
           </div>
 
           <div class="statusRow">
-            <span class="chip">INTERLINK: NOMINAL</span>
-            <span class="chip" style="opacity:.86;border-color:rgba(255,177,74,.38)">AI SYSTEMS: LOCKED</span>
+            <span class="chip" id="statusLeft">INTERLINK: NOMINAL</span>
+            <span class="chip" id="statusRight" style="opacity:.86;border-color:rgba(255,177,74,.38)">AI SYSTEMS: LOCKED</span>
           </div>
         </div>
 
@@ -662,7 +744,7 @@
 
       <div class="sectionTitle">
         Decryption Key
-        <small>BLACK VAULT / SCALING PILLAR No.01</small>
+        <small id="keyMeta">BLACK VAULT / THEATER EU / SEALING PILLAR No.01</small>
       </div>
 
       <section class="keyArea">
@@ -675,7 +757,7 @@
         <div class="barsWrap">
           <div class="barsHeader">
             <span>Current Target Cylinders</span>
-            <span>UKM-v7.0.8</span>
+            <span id="ukm">UKM-v7.0.8</span>
           </div>
           <div class="bars" id="bars"></div>
         </div>
@@ -705,8 +787,8 @@
       </section>
 
       <div class="footer">
-        <span>SESSION: ACTIVE / AUTH: RESTRICTED</span>
-        <span>OPS / MISSION TEAM 01</span>
+        <span id="footerLeft">SESSION: ACTIVE / AUTH: RESTRICTED</span>
+        <span id="footerRight">OPS / MISSION TEAM 01</span>
       </div>
     </section>
   </main>
@@ -715,12 +797,14 @@
     const $ = (id)=>document.getElementById(id);
     const rnd = (a,b)=>Math.floor(Math.random()*(b-a+1))+a;
 
-    const bits = (n=16)=>{
+    function pad2(n){ return String(n).padStart(2,"0"); }
+    function clamp(n,a,b){ return Math.max(a, Math.min(b,n)); }
+    function bits(n=16){
       const s=[];
       for(let i=0;i<n;i++) s.push(String(rnd(0,1)));
       return s.join(" ");
-    };
-    const dots = (t)=>".".repeat((t%4)+1);
+    }
+    function dots(t){ return ".".repeat((t%4)+1); }
 
     function fillBits(targetId){
       const box = $(targetId);
@@ -732,7 +816,6 @@
         box.appendChild(code);
       }
     }
-    ["bits1","bits2","bits3","bits4"].forEach(fillBits);
 
     // bars
     const bars = $("bars");
@@ -754,50 +837,136 @@
       return "D";
     }
 
-    // animate SVG sweep
+    // animate sweep
     const sweep = document.getElementById("sweep");
     let ang = 0;
+
+    const THEATER_LABEL = {
+      EU:"EUROPE", JP:"JAPAN", NA:"NORTH AMERICA", SA:"SOUTH AMERICA",
+      AF:"AFRICA", ME:"MIDDLE EAST", OC:"OCEANIA", PAC:"PACIFIC", GLOBAL:"GLOBAL"
+    };
+
+    function readQuery(){
+      const sp = new URLSearchParams(location.search);
+      const theater = (sp.get("theater") || "EU").toUpperCase();
+      const pillar = parseInt(sp.get("pillar") || "1", 10);
+      const mode = (sp.get("mode") || "RESTORE").toUpperCase();
+      return {
+        theater: THEATER_LABEL[theater] ? theater : "EU",
+        pillar: isFinite(pillar) ? clamp(pillar,1,99) : 1,
+        mode: ["RESTORE","RESEAL","STABILIZE","DIAG"].includes(mode) ? mode : "RESTORE"
+      };
+    }
+
+    function applyConfig(cfg){
+      $("theater").value = cfg.theater;
+      $("pillarNo").value = cfg.pillar;
+      $("mode").value = cfg.mode;
+
+      const th = cfg.theater;
+      const thLabel = THEATER_LABEL[th] || th;
+      const pNo = pad2(cfg.pillar);
+
+      $("keyMeta").textContent = `BLACK VAULT / THEATER ${th} / SEALING PILLAR No.${pNo}`;
+      $("sideGreen").textContent = `L-3E / ${th}-OPS / ACCESS: RESTRICTED`;
+
+      const modeLabel = ({
+        RESTORE:"RESTORATION",
+        RESEAL:"RE-SEALING",
+        STABILIZE:"STABILIZATION",
+        DIAG:"DIAGNOSTICS"
+      })[cfg.mode] || "RESTORATION";
+
+      $("topbarLeft").textContent = `AM-4 / ${modeLabel} CONTROL / SEALING PILLAR`;
+      $("subline").textContent = `${modeLabel} SYSTEM CONTROL // NODE INTERLOCK // TELEMETRY FEED`;
+
+      $("statusLeft").textContent = (cfg.mode==="DIAG") ? "INTERLINK: TESTING" : "INTERLINK: NOMINAL";
+      $("statusRight").textContent = (cfg.mode==="RESEAL") ? "SECURITY: ARMED" : "AI SYSTEMS: LOCKED";
+
+      $("footerRight").textContent = `${thLabel} / MISSION TEAM ${pNo}`;
+      document.title = `Sealing Pillar Console [${th}-No.${pNo}]`;
+
+      $("ukm").textContent = `UKM-v7.${rnd(0,9)}.${rnd(0,9)}`;
+
+      const sp = new URLSearchParams(location.search);
+      sp.set("theater", th);
+      sp.set("pillar", String(cfg.pillar));
+      sp.set("mode", cfg.mode);
+      history.replaceState(null, "", `${location.pathname}?${sp.toString()}`);
+    }
+
+    function currentCfg(){
+      return {
+        theater: $("theater").value,
+        pillar: clamp(parseInt($("pillarNo").value || "1",10),1,99),
+        mode: $("mode").value
+      };
+    }
+
+    function exportConfig(cfg){
+      const blob = new Blob([JSON.stringify({
+        system:"sealing-pillar-console",
+        theater: cfg.theater,
+        pillar: cfg.pillar,
+        mode: cfg.mode,
+        exported_at: new Date().toISOString()
+      }, null, 2)], {type:"application/json"});
+      const a = document.createElement("a");
+      const pNo = pad2(cfg.pillar);
+      a.href = URL.createObjectURL(blob);
+      a.download = `pillar-${cfg.theater.toLowerCase()}-no${pNo}-${cfg.mode.toLowerCase()}.json`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
+    }
+
+    // init
+    applyConfig(readQuery());
+    ["bits1","bits2","bits3","bits4"].forEach(fillBits);
+
+    $("apply").addEventListener("click", ()=>{
+      applyConfig(currentCfg());
+      $("chipLink").textContent = "LINK*";
+      setTimeout(()=>{ $("chipLink").textContent = "LINK"; }, 350);
+    });
+
+    window.addEventListener("keydown", (e)=>{
+      if(e.shiftKey && (e.key==="E" || e.key==="e")){
+        exportConfig(currentCfg());
+      }
+    });
 
     let tick = 0;
     setInterval(()=>{
       tick++;
 
-      // decoding dots
       $("t1").textContent = "Decrypting" + dots(tick);
       $("t2").textContent = "Decrypting" + dots(tick+1);
       $("t3").textContent = "Decrypting" + dots(tick+2);
       $("t4").textContent = "Decrypting" + dots(tick+3);
 
-      // percent: low value wobble like the screenshot
       const p = Math.max(0, Math.min(99, Math.round( 3 + Math.sin(tick/6)*2 + (Math.random()*2-1) )));
-      $("pct").textContent = String(p).padStart(2,"0");
+      $("pct").textContent = pad2(p);
       $("rank").textContent = calcRank(p);
 
-      // stage center text occasional flip
       if(tick % 12 === 0){
-        const s = (Math.random() < .7) ? "STAGE 04" : "STAGE 05";
-        $("stageMid").textContent = s;
+        $("stageMid").textContent = (Math.random() < .7) ? "STAGE 04" : "STAGE 05";
       }
 
-      // bars drift
       for(const b of barEls){
         const cur = parseInt(b.style.height,10) || 30;
-        const drift = rnd(-9,9);
-        b.style.height = Math.max(8, Math.min(98, cur + drift)) + "%";
+        b.style.height = Math.max(8, Math.min(98, cur + rnd(-9,9))) + "%";
       }
 
-      // refresh bits occasionally
       if(tick % 5 === 0){
         ["bits1","bits2","bits3","bits4"].forEach(fillBits);
       }
 
-      // cluster flicker
       const states = ["Decrypting Stage 04B","Stage Locked","Nominal Sync","Interlock Pending","Key Match: Partial"];
       ["c1","c2","c3","c4"].forEach((id)=>{
         if(Math.random()<0.25) $(id).textContent = states[rnd(0,states.length-1)];
       });
 
-      // sweep rotation
       ang = (ang + 8) % 360;
       if(sweep) sweep.setAttribute("transform", `rotate(${ang} 0 0)`);
 
