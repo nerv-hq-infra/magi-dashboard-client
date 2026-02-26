@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TERMINAL // ENTRY</title>
+  <meta name="description" content="警告UI・端末ログ風の体験サイト（オリジナルデザイン）" />
+  <link rel="stylesheet" href="style.css?v=20260226-1">
+  <script defer src="app.js?v=20260226-1"></script>
+</head>
+<body>
+  <!-- FX overlays -->
+  <div class="fx fx-hex" aria-hidden="true"></div>
+  <div class="fx fx-scan" aria-hidden="true"></div>
+  <div class="fx fx-noise" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar__left">
+      <span class="chip chip--alert">ALERT</span>
+      <span class="chip">SECTOR: <b id="sector">A-03</b></span>
+      <span class="chip">LINK: <b class="ok">OK</b></span>
+    </div>
+    <div class="topbar__right">
+      <span class="chip mono" id="clock">--:--:--</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="hero panel">
+      <div class="hero__head">
+        <h1 class="h1">TERMINAL INTERFACE</h1>
+        <p class="sub">起動ログを通過して、メニューへ進行せよ。</p>
+      </div>
+
+      <div class="boot" id="boot" role="region" aria-label="起動ログ">
+        <div class="boot__screen mono" id="bootLines"></div>
+        <div class="boot__actions">
+          <button class="btn" id="skipBoot" type="button">SKIP</button>
+        </div>
+      </div>
+
+      <div class="menu" id="menu" hidden>
+        <div class="grid">
+          <a class="card" href="files.html" data-sfx="tap">
+            <div class="card__kicker mono">ARCHIVE</div>
+            <div class="card__title">FILES</div>
+            <div class="card__desc">記録・ページ・作品ログ</div>
+          </a>
+
+          <a class="card" href="terminal.html" data-sfx="tap">
+            <div class="card__kicker mono">CONTROL</div>
+            <div class="card__title">TERMINAL</div>
+            <div class="card__desc">コマンド入力・隠し導線</div>
+          </a>
+
+          <a class="card" href="about.html" data-sfx="tap">
+            <div class="card__kicker mono">INFO</div>
+            <div class="card__title">ABOUT</div>
+            <div class="card__desc">このサイトの設計・注意</div>
+          </a>
+
+          <button class="card card--btn" id="panic" type="button">
+            <div class="card__kicker mono">EMERGENCY</div>
+            <div class="card__title">PANIC</div>
+            <div class="card__desc">警告演出（オーバーレイ）</div>
+          </button>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="row">
+          <div class="note">
+            <div class="note__title mono">DESIGN RULE</div>
+            <div class="note__body">黒基調 + 警告色（赤/橙） + 端末ログ。固有名詞や公式素材を使わず、抽象要素で“モチーフ”を作る。</div>
+          </div>
+          <div class="note">
+            <div class="note__title mono">STATUS</div>
+            <div class="note__body"><span class="ok">SYSTEM ONLINE</span> / <span class="warn">WARNING LEVEL: 1</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span class="mono">© tomoponz / original terminal UI</span>
+    </footer>
+  </main>
+
+  <!-- Panic overlay -->
+  <div class="overlay" id="overlay" hidden>
+    <div class="overlay__panel panel">
+      <div class="overlay__title mono">WARNING</div>
+      <p class="overlay__text">システムは異常を検知した。落ち着け。呼吸しろ。次の手を選べ。</p>
+      <div class="btnrow">
+        <button class="btn primary" id="closeOverlay" type="button">ACK</button>
+        <a class="btn" href="terminal.html">OPEN TERMINAL</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

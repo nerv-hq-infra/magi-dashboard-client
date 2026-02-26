@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TERMINAL // CONTROL</title>
+  <meta name="description" content="コマンド入力UI" />
+  <link rel="stylesheet" href="style.css?v=20260226-1">
+  <script defer src="app.js?v=20260226-1"></script>
+</head>
+<body>
+  <div class="fx fx-hex" aria-hidden="true"></div>
+  <div class="fx fx-scan" aria-hidden="true"></div>
+  <div class="fx fx-noise" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar__left">
+      <a class="chip chip--link" href="index.html">← HOME</a>
+      <span class="chip">MODE: <b>TERMINAL</b></span>
+      <span class="chip">ACCESS: <b class="ok">GRANTED</b></span>
+    </div>
+    <div class="topbar__right">
+      <span class="chip mono" id="clock">--:--:--</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <div class="panel__head">
+        <h1 class="h2">CONTROL TERMINAL</h1>
+        <p class="sub">コマンドを入力。<span class="mono">help</span> で一覧。</p>
+      </div>
+
+      <div class="term" role="region" aria-label="terminal">
+        <div class="term__out mono" id="termOut"></div>
+        <div class="term__in">
+          <span class="prompt mono">&gt;</span>
+          <input class="term__input mono" id="termIn" autocomplete="off" spellcheck="false" />
+          <button class="btn small" id="termRun" type="button">RUN</button>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+      <p class="mono muted">例: <b>open files</b> / <b>theme</b> / <b>clear</b></p>
+    </section>
+
+    <footer class="footer">
+      <span class="mono">TERMINAL END</span>
+    </footer>
+  </main>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FILES // ARCHIVE</title>
+  <meta name="description" content="アーカイブ一覧（ログ/作品/リンク）" />
+  <link rel="stylesheet" href="style.css?v=20260226-1">
+  <script defer src="app.js?v=20260226-1"></script>
+</head>
+<body>
+  <div class="fx fx-hex" aria-hidden="true"></div>
+  <div class="fx fx-scan" aria-hidden="true"></div>
+  <div class="fx fx-noise" aria-hidden="true"></div>
+
+  <header class="topbar">
+    <div class="topbar__left">
+      <a class="chip chip--link" href="index.html">← HOME</a>
+      <span class="chip">MODE: <b>ARCHIVE</b></span>
+      <span class="chip">FILTER: <b id="filterState">ALL</b></span>
+    </div>
+    <div class="topbar__right">
+      <span class="chip mono" id="clock">--:--:--</span>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="panel">
+      <div class="panel__head">
+        <h1 class="h2">FILES</h1>
+        <p class="sub">ログ風カード。作品・メモ・外部リンクを追加して育てる。</p>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" id="q" placeholder="search (title / tag)" autocomplete="off" />
+        <div class="tabs" role="tablist" aria-label="filter">
+          <button class="btn small active" data-filter="all" type="button">ALL</button>
+          <button class="btn small" data-filter="work" type="button">WORK</button>
+          <button class="btn small" data-filter="log" type="button">LOG</button>
+          <button class="btn small" data-filter="link" type="button">LINK</button>
+        </div>
+      </div>
+
+      <div class="list" id="list" aria-live="polite"></div>
+
+      <div class="divider"></div>
+      <p class="mono muted">TIP: cards data is in <b>app.js</b> (FILES_DB). あとでJSON化してもOK。</p>
+    </section>
+
+    <footer class="footer">
+      <span class="mono">ARCHIVE END</span>
+    </footer>
+  </main>
+</body>
+</html>
