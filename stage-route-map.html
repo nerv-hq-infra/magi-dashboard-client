@@ -451,7 +451,7 @@
 
       <div class="headline">
         <h1 class="h1">ROUTE MAP</h1>
-        <p class="sub">枝分かれに沿ってブロック文字を入力し、末端ターゲットに到達せよ。到達するとブロックが赤化し、復号パネルへ遷移する。</p>
+        <p class="sub">枝分かれに沿ってブロック文字を入力し、末端ターゲットに到達せよ。到達するとブロックが赤化し、Stage Layer Map（復号コンソール）へ遷移する。</p>
       </div>
 
       <div class="layout">
@@ -459,63 +459,6 @@
           <svg id="svg" viewBox="0 0 1000 620" role="img" aria-label="route map">
             <!-- drawn by JS -->
           </svg>
-
-          <!-- Access sequence overlay (hidden until TARGET reached) -->
-          <div class="seq" id="seq" aria-hidden="true">
-            <div class="ringPane" id="ringPane">
-              <div class="ring"></div>
-              <svg class="ringMarks" viewBox="0 0 560 560" aria-hidden="true">
-                <g fill="none" stroke="rgba(255,177,74,.28)" stroke-width="2">
-                  <path d="M280 44 L280 96" />
-                  <path d="M280 464 L280 516" opacity=".35"/>
-                  <path d="M44 280 L96 280" opacity=".35"/>
-                  <path d="M464 280 L516 280" opacity=".35"/>
-                </g>
-                <g stroke="rgba(255,177,74,.22)" stroke-width="1" fill="none">
-                  <circle cx="280" cy="280" r="212" />
-                  <circle cx="280" cy="280" r="178" opacity=".55"/>
-                  <circle cx="280" cy="280" r="144" opacity=".35"/>
-                </g>
-              </svg>
-              <div class="ringHud">
-                <div class="meta">STAGE <b>04</b>&nbsp; /&nbsp; SEC.10&nbsp; /&nbsp; SIDE-B</div>
-                <div class="pct" aria-label="percent">
-                  <div class="digits">
-                    <div class="digit" id="d1">0</div>
-                    <div class="digit" id="d2">0</div>
-                    <div class="digit" id="d3">0</div>
-                  </div>
-                  <div class="sym">%</div>
-                </div>
-              </div>
-            </div>
-
-            <section class="decryptPane" id="decryptPane" aria-label="Decryption Key panel">
-              <div class="decryptTop">
-                <div>
-                  <h2 class="decryptTitle">Decryption Key</h2>
-                  <div class="decryptMeta">Black Chamber / NERV Sealing Pillar No.01&nbsp;&nbsp;|&nbsp;&nbsp;<span id="decryptState">Interlink: Nominal</span>&nbsp;&nbsp;|&nbsp;&nbsp;AI Systems: Locked</div>
-                </div>
-                <button class="restartBtn" id="restartBtn" type="button">RESTART DECRYPTION</button>
-              </div>
-
-              <div class="decryptBody">
-                <div class="puzzleNote">
-                  <div>各シリンダ（縦バー）を <b>正しい位置</b> に合わせろ。合致すると固定され、次のバーへ移行する。</div>
-                  <div id="puzzleMsg">TARGET CYLINDERS: <b>--/--</b></div>
-                </div>
-
-                <div class="stripWrap">
-                  <div class="strip" id="strip" aria-label="cylinder puzzle"></div>
-                </div>
-
-                <div class="progressRow">
-                  <div id="puzzleStatus">DECRYPTING… Align cylinders</div>
-                  <div class="bar" aria-hidden="true"><i id="pbar"></i></div>
-                </div>
-              </div>
-            </section>
-          </div>
 
           <div class="hud">
             <div class="hudLeft">
@@ -581,19 +524,6 @@
       const goBtn = document.getElementById("goBtn");
       const status = document.getElementById("status");
       const hint = document.getElementById("hint");
-
-      const seq = document.getElementById("seq");
-      const ringPane = document.getElementById("ringPane");
-      const decryptPane = document.getElementById("decryptPane");
-      const restartBtn = document.getElementById("restartBtn");
-      const d1 = document.getElementById("d1");
-      const d2 = document.getElementById("d2");
-      const d3 = document.getElementById("d3");
-      const strip = document.getElementById("strip");
-      const puzzleMsg = document.getElementById("puzzleMsg");
-      const puzzleStatus = document.getElementById("puzzleStatus");
-      const pbar = document.getElementById("pbar");
-      const decryptState = document.getElementById("decryptState");
 
       const ROOT = "R0";
       const TARGET = "STAGE";
@@ -784,8 +714,7 @@
       }
 
       let autoTimer = null;
-      let seqStarted = false;
-      let puzzleReady = false;
+      let grantTimer = null;
 
       function applyRoute(){
         const route = parseRoute(routeIn.value);
@@ -818,8 +747,9 @@
         if(res.isTarget){
           nodeEls.get(TARGET)?.classList.add("hit");
           setStatus(`<span class="ok">TARGET LOCK</span> / <b>${TARGET}</b> reached`);
-          setHint("Decryption sequence start…");
-          beginSequence();
+          setHint("Link established. Switching to Stage Layer Map…");
+          goBtn.disabled = false;
+          grantAccess();
           return;
         }
 
@@ -829,17 +759,23 @@
         setHint("末端まで入力するとターゲットが赤化");
       }
 
-      function armAndGo(){
-        if(!puzzleReady) return;
-        try{ sessionStorage.setItem(KEY, "1"); }catch(e){}
+      function grantAccess(){
+        if(grantTimer) return;
+        try{
+          sessionStorage.setItem(KEY, "1");
+          sessionStorage.setItem("MAGI_STAGE_CINEMATIC", "1");
+        }catch(e){}
         beep(1040, 70, "square", 0.04);
         setStatus(`<span class="ok">ACCESS GRANTED</span> / redirecting...`);
         setHint("");
-        setTimeout(() => { location.href = next; }, 650);
+        routeIn.disabled = true;
+        resetBtn.disabled = true;
+        goBtn.disabled = true;
+        grantTimer = setTimeout(() => { location.href = next; }, 900);
       }
 
+
       function appendToken(tok){
-        if(seqStarted) return;
         const cur = parseRoute(routeIn.value);
         if(cur.length === 0){
           routeIn.value = tok;
@@ -858,224 +794,20 @@
         }
       }
 
-      // === Sequence + Puzzle ===
-      const PUZZLE_N = 28;
-      const LIM = 22;
-      const SNAP = 3;
-      let targets = [];
-      let offsets = [];
-      let locked = [];
-      let focus = 0;
+            // === (sequence moved to stage-layer-map.html) ===
 
-      function setDigits(n){
-        const s = String(Math.max(0, Math.min(999, n))).padStart(3,"0");
-        if(d1) d1.textContent = s[0];
-        if(d2) d2.textContent = s[1];
-        if(d3) d3.textContent = s[2];
-      }
-
-      function beginSequence(){
-        if(seqStarted) return;
-        seqStarted = true;
-
-        // lock route input UI
-        routeIn.disabled = true;
-        resetBtn.disabled = true;
-        goBtn.disabled = true;
-
-        // show overlay
-        seq?.classList.add("on");
-        seq?.setAttribute("aria-hidden","false");
-        ringPane?.classList.add("on");
-
-        // percent animation to 037
-        const targetPct = 37;
-        let cur = 0;
-        setDigits(0);
-        const t = setInterval(() => {
-          cur += 1;
-          setDigits(cur);
-          if(cur % 3 === 0) beep(840 + (cur%12)*20, 18, "square", 0.02);
-          if(cur >= targetPct){
-            clearInterval(t);
-            beep(1040, 70, "square", 0.03);
-          }
-        }, 26);
-
-        setTimeout(() => {
-          decryptPane?.classList.add("on");
-          initPuzzle();
-        }, 1150);
-      }
-
-      function mkTarget(i){
-        const base = ((i * 7) % 11) - 5; // -5..5
-        return Math.max(-LIM, Math.min(LIM, base * 4));
-      }
-      function rnd(min,max){
-        return Math.floor(Math.random()*(max-min+1))+min;
-      }
-
-      function updatePuzzleUi(){
-        const done = locked.filter(Boolean).length;
-        const pct = Math.round((done / PUZZLE_N) * 100);
-        if(puzzleMsg) puzzleMsg.innerHTML = `TARGET CYLINDERS: <b>${done}/${PUZZLE_N}</b>`;
-        if(pbar) pbar.style.width = `${pct}%`;
-        if(puzzleStatus){
-          if(done >= PUZZLE_N){
-            puzzleStatus.textContent = "DECRYPTION COMPLETE";
-          } else {
-            puzzleStatus.textContent = `DECRYPTING… Align cylinder ${focus+1}`;
-          }
-        }
-      }
-
-      function setFocus(i){
-        focus = i;
-        for(const el of strip?.children || []) el.classList.remove("focus");
-        const cur = strip?.querySelector(`.cyl[data-i="${i}"]`);
-        cur?.classList.add("focus");
-        cur?.scrollIntoView({behavior:"smooth", inline:"center", block:"nearest"});
-        updatePuzzleUi();
-      }
-
-      function nextFocus(){
-        for(let i=focus+1;i<PUZZLE_N;i++) if(!locked[i]) return setFocus(i);
-        for(let i=0;i<PUZZLE_N;i++) if(!locked[i]) return setFocus(i);
-      }
-
-      function lockCyl(i){
-        locked[i] = true;
-        offsets[i] = targets[i];
-        const el = strip?.querySelector(`.cyl[data-i="${i}"]`);
-        if(el){
-          el.classList.add("locked");
-          const h = el.querySelector(".handle");
-          if(h) h.style.setProperty("--off", `${offsets[i]}px`);
-        }
-        beep(980, 55, "square", 0.03);
-        updatePuzzleUi();
-
-        if(locked.every(Boolean)){
-          onPuzzleComplete();
-        } else {
-          nextFocus();
-        }
-      }
-
-      function onPuzzleComplete(){
-        puzzleReady = true;
-        if(decryptState) decryptState.textContent = "Interlink: Nominal";
-        beep(1140, 90, "square", 0.04);
-        goBtn.disabled = false;
-        setStatus(`<span class="ok">DECRYPTION OK</span> / all cylinders aligned`);
-        setHint("Access will open…");
-        setTimeout(() => armAndGo(), 850);
-      }
-
-      function renderPuzzle(){
-        if(!strip) return;
-        strip.innerHTML = "";
-        for(let i=0;i<PUZZLE_N;i++){
-          const cyl = document.createElement("div");
-          cyl.className = "cyl" + (i===focus ? " focus":"");
-          cyl.dataset.i = String(i);
-          cyl.innerHTML = `
-            <div class="fill"></div>
-            <div class="handle" style="--off:${offsets[i]}px"></div>
-            <div class="idx">${String(i+1).padStart(2,"0")}</div>
-          `;
-          if(locked[i]) cyl.classList.add("locked");
-          strip.appendChild(cyl);
-        }
-        updatePuzzleUi();
-      }
-
-      function initPuzzle(){
-        targets = Array.from({length:PUZZLE_N}, (_,i) => mkTarget(i));
-        offsets = Array.from({length:PUZZLE_N}, (_,i) => {
-          let v = targets[i] + rnd(-LIM, LIM);
-          v = Math.max(-LIM, Math.min(LIM, v));
-          if(Math.abs(v - targets[i]) < 2) v = Math.max(-LIM, Math.min(LIM, v + 6));
-          return v;
-        });
-        locked = Array.from({length:PUZZLE_N}, () => false);
-        focus = 0;
-        renderPuzzle();
-        setFocus(0);
-        if(decryptState) decryptState.textContent = "Interlink: Nominal";
-      }
-
-      // puzzle drag (vertical)
-      let dragI = -1;
-      let startY = 0;
-      let startOff = 0;
-
-      strip?.addEventListener("pointerdown", (e) => {
-        const cyl = e.target.closest?.(".cyl");
-        if(!cyl) return;
-        const i = Number(cyl.dataset.i);
-        if(Number.isNaN(i) || locked[i]) return;
-        // Sequential: only the current focused cylinder can be adjusted.
-        if(i !== focus){
-          beep(240, 70, "sawtooth", 0.018);
-          return;
-        }
-        dragI = i;
-        startY = e.clientY;
-        startOff = offsets[i];
-        cyl.setPointerCapture?.(e.pointerId);
-        beep(760, 24, "square", 0.02);
-      });
-
-      strip?.addEventListener("pointermove", (e) => {
-        if(dragI < 0) return;
-        const dy = e.clientY - startY;
-        const v = Math.max(-LIM, Math.min(LIM, startOff + dy));
-        offsets[dragI] = v;
-        const el = strip?.querySelector(`.cyl[data-i="${dragI}"] .handle`);
-        if(el) el.style.setProperty("--off", `${v}px`);
-      });
-
-      function endDrag(){
-        if(dragI < 0) return;
-        const i = dragI;
-        dragI = -1;
-        const dist = Math.abs(offsets[i] - targets[i]);
-        if(dist <= SNAP){
-          lockCyl(i);
-        } else {
-          beep(280, 60, "sawtooth", 0.018);
-          updatePuzzleUi();
-        }
-      }
-
-      strip?.addEventListener("pointerup", endDrag);
-      strip?.addEventListener("pointercancel", endDrag);
-
-      restartBtn?.addEventListener("click", () => {
-        if(!seqStarted) return;
-        puzzleReady = false;
-        goBtn.disabled = true;
-        beep(520, 55, "square", 0.03);
-        initPuzzle();
-        setStatus(`<span class="ok">RESTART</span> / decryption reset`);
-        setHint("Align cylinders again");
-      });
-
-      // init
+// init
       drawGraph();
       applyRoute();
 
-      routeIn.addEventListener("input", () => { if(!seqStarted) applyRoute(); });
+      routeIn.addEventListener("input", () => { applyRoute(); });
       routeIn.addEventListener("keydown", (e) => {
         if(e.key === "Enter"){
           e.preventDefault();
-          if(puzzleReady) armAndGo();
+          grantAccess();
         }
       });
       resetBtn.addEventListener("click", () => {
-        if(seqStarted) return;
         routeIn.value = "";
         routeIn.disabled = false;
         resetBtn.disabled = false;
@@ -1083,10 +815,9 @@
         beep(520, 55, "square", 0.03);
         applyRoute();
       });
-      goBtn.addEventListener("click", armAndGo);
+      goBtn.addEventListener("click", grantAccess);
 
       svg.addEventListener("click", (e) => {
-        if(seqStarted) return;
         const g = e.target.closest(".node");
         if(!g) return;
         const label = g.getAttribute("data-label");

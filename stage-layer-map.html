@@ -5,20 +5,6 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Sealing Pillar Restoration Console</title>
   <meta name="description" content="Amber terminal-style UI (inspired, original composition) - multi-pillar compatible" />
-  <script>
-    // Gate: require the route-map step before entering this console.
-    // If the page is opened directly, redirect to the route map.
-    (() => {
-      const KEY = "MAGI_STAGE_UNLOCK";
-      try {
-        if(sessionStorage.getItem(KEY) === "1") return;
-        const next = encodeURIComponent("stage-layer-map.html");
-        location.replace(`stage-route-map.html?next=${next}`);
-      } catch (e) {
-        location.replace("stage-route-map.html?next=stage-layer-map.html");
-      }
-    })();
-  </script>
   <style>
     :root{
       --bg:#06080b;
@@ -588,7 +574,181 @@
       .keyArea{grid-template-columns: 1fr}
       .percent{font-size: 72px}
     }
-  </style>
+      /* === Cinematic + puzzle additions (NORMAL ops style) === */
+    .frame{ perspective: 1200px; }
+
+    /* fade-in for radar percent */
+    .radarWrap{ transition: opacity .7s ease, transform .7s ease; }
+    body.cinematic .radarWrap{ opacity:0; transform: translateY(-10px) scale(.99); }
+    body.cinematic.radarShown .radarWrap{ opacity:1; transform: none; }
+
+    .centerBox{ transition: opacity .7s ease, transform .7s ease; }
+    body.cinematic .centerBox{ opacity:0; transform: scale(.90); }
+    body.cinematic.pctShown .centerBox{ opacity:1; transform: scale(1); }
+
+    /* Decryption tab: rotate in from depth (90deg) */
+    .decryptWrap{
+      transform-origin: 50% 0%;
+      transform: rotateX(90deg) translateY(-14px);
+      opacity:0;
+      transition: transform .95s cubic-bezier(.2,.8,.2,1), opacity .6s ease;
+      will-change: transform, opacity;
+    }
+    body.cinematic.decryptShown .decryptWrap{
+      transform: rotateX(0deg) translateY(0);
+      opacity:1;
+    }
+
+    /* Keep normal layout when not in cinematic */
+    body:not(.cinematic) .decryptWrap{ transform:none; opacity:1; transition:none; }
+
+    .barsHeader .barsRight{ display:flex; gap:10px; align-items:center; justify-content:flex-end; }
+    .restartBtn{
+      border:1px solid var(--line);
+      background: rgba(255,177,74,.10);
+      color: var(--amber);
+      font-family: var(--sans);
+      font-weight: 950;
+      letter-spacing:.10em;
+      padding: 8px 14px;
+      box-shadow: var(--glow);
+      cursor:pointer;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .restartBtn:disabled{
+      opacity:.55;
+      cursor:default;
+      border-color: rgba(255,177,74,.28);
+      box-shadow:none;
+    }
+    .restartBtn.big{
+      position:absolute;
+      left:50%;
+      top:50%;
+      transform: translate(-50%,-50%);
+      width: min(640px, 86%);
+      padding: 14px 18px;
+      font-size: 22px;
+      letter-spacing:.10em;
+      background: rgba(255,255,255,.10);
+      border-color: rgba(255,177,74,.55);
+      backdrop-filter: blur(2px);
+    }
+    .restartBtn.big:disabled{ opacity:0; pointer-events:none; }
+
+    .puzzleHud{
+      margin-top: 8px;
+      font-size: 12px;
+      opacity: .90;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding: 6px 2px 0;
+    }
+    .puzzleHud b{ font-family: var(--sans); letter-spacing:.04em }
+
+    /* puzzle bar states */
+    .bar{ transition: height .12s linear, filter .2s ease, border-color .2s ease, box-shadow .2s ease; touch-action:none; }
+    .bar.active{
+      border-color: rgba(57,255,122,.65);
+      box-shadow: 0 0 18px rgba(57,255,122,.18);
+      filter: brightness(1.1);
+    }
+    .bar.locked{
+      border-color: rgba(255,177,74,.78);
+      background: linear-gradient(180deg, rgba(255,177,74,.36), rgba(255,177,74,.12));
+      opacity:1;
+      box-shadow: 0 0 18px rgba(255,177,74,.14);
+      filter:none;
+    }
+    .bar.locked.dim{ opacity:.92; }
+
+    /* SYSTEM UNLOCKED overlay */
+    .unlockOverlay{
+      position:absolute;
+      inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      pointer-events:none;
+      opacity:0;
+      transition: opacity .35s ease;
+    }
+    .unlockOverlay.on{ opacity:1; pointer-events:auto; }
+    .unlockOverlay::before{
+      content:"";
+      position:absolute; inset:0;
+      background: rgba(0,0,0,.35);
+    }
+    .unlockPanel{
+      position:relative;
+      width: min(980px, 92%);
+      height: min(380px, 52vh);
+      background: #c00000;
+      border: 2px solid rgba(255,255,255,.45);
+      box-shadow: 0 26px 90px rgba(0,0,0,.62);
+      display:grid;
+      place-items:center;
+      overflow:hidden;
+    }
+    .unlockPanel::after{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        repeating-linear-gradient(to bottom,
+          rgba(255,255,255,.05), rgba(255,255,255,.05) 1px,
+          rgba(255,255,255,0) 2px, rgba(255,255,255,0) 4px);
+      opacity:.35;
+      pointer-events:none;
+      mix-blend-mode: screen;
+    }
+    .achiral{
+      position:absolute;
+      top: 16px;
+      font-family: var(--sans);
+      font-weight: 800;
+      font-size: 12px;
+      line-height: 1.25;
+      color: rgba(255,255,255,.92);
+      text-align:center;
+      letter-spacing:.02em;
+      opacity:.95;
+    }
+    .achiral b{ font-size: 14px; letter-spacing:.01em }
+    .achiral small{ font-weight:700; opacity:.92 }
+    .ach1{ left: 18px; }
+    .ach2{ left: 50%; transform: translateX(-50%); }
+    .ach3{ right: 18px; }
+
+    .unlockMain{ position:relative; z-index:1; text-align:center; padding: 20px; }
+    .unlockTitle{
+      font-family: var(--sans);
+      font-weight: 1000;
+      font-size: clamp(40px, 6vw, 86px);
+      letter-spacing: -0.03em;
+      color: rgba(255,255,255,.95);
+      text-shadow: 0 0 24px rgba(0,0,0,.25);
+    }
+    .unlockSub{
+      margin-top: 14px;
+      font-family: var(--sans);
+      font-weight: 800;
+      font-size: clamp(18px, 2.4vw, 34px);
+      color: rgba(255,255,255,.90);
+      text-shadow: 0 0 18px rgba(0,0,0,.22);
+    }
+    .unlockFoot{
+      position:absolute;
+      right: 16px;
+      bottom: 12px;
+      font-size: 10px;
+      color: rgba(255,255,255,.80);
+      letter-spacing:.08em;
+      z-index:2;
+    }
+
+</style>
 </head>
 
 <body>
@@ -756,6 +916,8 @@
         </div>
       </div>
 
+            <div id="decryptWrap" class="decryptWrap">
+
       <div class="sectionTitle">
         Decryption Key
         <small id="keyMeta">BLACK VAULT / THEATER EU / SEALING PILLAR No.01</small>
@@ -773,7 +935,9 @@
             <span>Current Target Cylinders</span>
             <span id="ukm">UKM-v7.0.8</span>
           </div>
+          <button class="restartBtn big" id="restartBtn" type="button">RESTART DECRYPTION</button>
           <div class="bars" id="bars"></div>
+          <div class="puzzleHud" id="puzzleHud">DECRYPTING… Align cylinders <b id="puzzleCount">0/54</b></div>
         </div>
       </section>
 
@@ -800,10 +964,29 @@
         </div>
       </section>
 
+            </div>
+
       <div class="footer">
         <span id="footerLeft">SESSION: ACTIVE / AUTH: RESTRICTED</span>
         <span id="footerRight">OPS / MISSION TEAM 01</span>
       </div>
+      <!-- SYSTEM UNLOCKED overlay -->
+      <div class="unlockOverlay" id="unlockOverlay" aria-hidden="true">
+        <div class="unlockPanel" role="dialog" aria-label="system unlocked">
+          <div class="achiral ach1">MAGI<br><b>Achiral 1</b><br><small>Operational</small></div>
+          <div class="achiral ach2">MAGI<br><b>Achiral 2</b><br><small>Operational</small></div>
+          <div class="achiral ach3">MAGI<br><b>Achiral 3</b><br><small>Operational</small></div>
+
+          <div class="unlockMain">
+            <div class="unlockTitle">SYSTEM UNLOCKED</div>
+            <div class="unlockSub">Anti-L Shielding System Control: Online</div>
+          </div>
+
+          <div class="unlockFoot">CODE: 666  Anti-L Shielding System Control</div>
+        </div>
+      </div>
+
+
     </section>
   </main>
 
@@ -831,17 +1014,20 @@
       }
     }
 
-    // bars
+    // ========= Bars (base UI + puzzle) =========
     const bars = $("bars");
-    const N = 54;
+    const N = 54; // match layout density
+    const STEPS = [12,22,32,42,52,62,72,82];
+    const KEY_CINE = "MAGI_STAGE_CINEMATIC";
+    const KEY_SOLVED = "MAGI_STAGE_SOLVED";
+    const KEY_DEBUG_SOLVE = "MAGI_DEBUG_SOLVE";
+    const BASE_PCT = 37;
+
     const barEls = [];
-    for(let i=0;i<N;i++){
-      const d = document.createElement("div");
-      d.className = "bar" + (Math.random()<0.30 ? " dim" : "");
-      d.style.height = rnd(10,95) + "%";
-      bars.appendChild(d);
-      barEls.push(d);
-    }
+    let targets = new Array(N).fill(0);
+    let locked = new Array(N).fill(false);
+    let activeIndex = 0;
+    let puzzleActive = false;
 
     function calcRank(p){
       if(p>=85) return "S";
@@ -851,7 +1037,188 @@
       return "D";
     }
 
-    // animate sweep
+    function setPct(p){
+      const v = clamp(Math.round(p), 0, 100);
+      $("pct").textContent = pad2(v);
+      $("total").textContent = `${v}%`;
+      $("rank").textContent = calcRank(v);
+    }
+
+    function setPuzzleHud(){
+      const c = locked.filter(Boolean).length;
+      const cnt = $("puzzleCount");
+      if(cnt) cnt.textContent = `${c}/${N}`;
+    }
+
+    // tiny beep (no asset dependency)
+    let ac;
+    function beep(freq=880, ms=60, type="square", gain=0.03){
+      try {
+        ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+        const o = ac.createOscillator();
+        const g = ac.createGain();
+        o.type = type;
+        o.frequency.value = freq;
+        g.gain.value = gain;
+        o.connect(g); g.connect(ac.destination);
+        o.start();
+        setTimeout(() => { try{o.stop();}catch(e){} }, ms);
+      } catch(e){}
+    }
+
+    function nearestStep(h){
+      let best = STEPS[0], bestD = 1e9;
+      for(const s of STEPS){
+        const d = Math.abs(s - h);
+        if(d < bestD){ bestD = d; best = s; }
+      }
+      return best;
+    }
+
+    function makeBars(){
+      if(!bars) return;
+      bars.innerHTML = "";
+      barEls.length = 0;
+      for(let i=0;i<N;i++){
+        const d = document.createElement("div");
+        d.className = "bar" + (Math.random()<0.30 ? " dim" : "");
+        d.style.height = rnd(10,95) + "%";
+        d.dataset.i = String(i);
+        bars.appendChild(d);
+        barEls.push(d);
+      }
+    }
+
+    function setActive(i){
+      for(const el of barEls) el.classList.remove("active");
+      if(i < 0 || i >= N) return;
+      if(locked[i]) return;
+      barEls[i].classList.add("active");
+      activeIndex = i;
+    }
+
+    function updateProgress(){
+      const c = locked.filter(Boolean).length;
+      const p = (c>=N) ? 100 : (BASE_PCT + (100-BASE_PCT) * (c / N));
+      setPct(p);
+      if($("statusRight")){
+        $("statusRight").textContent = (c>=N) ? "AI SYSTEMS: UNLOCKED" : "AI SYSTEMS: LOCKED";
+        if(c>=N){
+          $("statusRight").style.borderColor = "rgba(57,255,122,.55)";
+          $("statusRight").style.color = "var(--green)";
+        }
+      }
+      setPuzzleHud();
+    }
+
+    function lockBar(i){
+      if(locked[i]) return;
+      locked[i] = true;
+      const el = barEls[i];
+      el.classList.add("locked");
+      el.classList.remove("active");
+      beep(980, 45, "square", 0.03);
+
+      // advance
+      let j = i + 1;
+      while(j < N && locked[j]) j++;
+      if(j < N) setActive(j);
+      updateProgress();
+
+      if(locked.filter(Boolean).length >= N){
+        puzzleActive = false;
+        sessionStorage.setItem(KEY_SOLVED, "1");
+        showUnlocked();
+      }
+    }
+
+    function enablePuzzle(){
+      targets = targets.map(()=> STEPS[rnd(0, STEPS.length-1)]);
+      locked = new Array(N).fill(false);
+
+      for(let i=0;i<N;i++){
+        let h = STEPS[rnd(0, STEPS.length-1)];
+        if(h === targets[i] && Math.random() < 0.7){
+          h = STEPS[(STEPS.indexOf(h)+rnd(1, STEPS.length-1)) % STEPS.length];
+        }
+        barEls[i].style.height = h + "%";
+        barEls[i].classList.remove("locked","active");
+      }
+
+      puzzleActive = true;
+      setActive(0);
+      updateProgress();
+
+      // drag logic (active bar only)
+      let drag = null; // {i, startY, startH}
+      function onDown(e){
+        if(!puzzleActive) return;
+        const i = parseInt(this.dataset.i || "-1", 10);
+        if(i !== activeIndex) return;
+        if(locked[i]) return;
+
+        drag = {i, startY: e.clientY, startH: parseFloat(this.style.height) || 40};
+        this.setPointerCapture?.(e.pointerId);
+        beep(660, 30, "square", 0.02);
+        e.preventDefault();
+      }
+      function onMove(e){
+        if(!drag) return;
+        const el = barEls[drag.i];
+        const dy = (drag.startY - e.clientY);
+        const h = clamp(drag.startH + dy * 0.35, 8, 98);
+        el.style.height = h.toFixed(1) + "%";
+      }
+      function onUp(e){
+        if(!drag) return;
+        const i = drag.i;
+        const el = barEls[i];
+        const cur = parseFloat(el.style.height) || 40;
+        const snap = nearestStep(cur);
+        el.style.height = snap + "%";
+        drag = null;
+
+        if(snap === targets[i]){
+          lockBar(i);
+        } else {
+          beep(220, 80, "sawtooth", 0.02);
+        }
+      }
+
+      for(const el of barEls){
+        el.onpointerdown = onDown;
+        el.onpointermove = onMove;
+        el.onpointerup = onUp;
+        el.onpointercancel = onUp;
+      }
+    }
+
+    function solvePuzzle(){
+      if(!puzzleActive) return;
+      for(let i=0;i<N;i++){
+        if(locked[i]) continue;
+        barEls[i].style.height = targets[i] + "%";
+        lockBar(i);
+      }
+    }
+
+    function showUnlocked(){
+      const o = $("unlockOverlay");
+      if(o){
+        o.classList.add("on");
+        o.setAttribute("aria-hidden","false");
+      }
+      setPct(100);
+      if($("statusRight")){
+        $("statusRight").textContent = "AI SYSTEMS: UNLOCKED";
+        $("statusRight").style.borderColor = "rgba(57,255,122,.55)";
+        $("statusRight").style.color = "var(--green)";
+      }
+      beep(1320, 70, "square", 0.03);
+      setTimeout(()=>beep(1760, 80, "square", 0.03), 90);
+    }
+
+    // ========= Config (existing) =========
     const sweep = document.getElementById("sweep");
     let ang = 0;
 
@@ -895,8 +1262,6 @@
       $("subline").textContent = `${modeLabel} SYSTEM CONTROL // NODE INTERLOCK // TELEMETRY FEED`;
 
       $("statusLeft").textContent = (cfg.mode==="DIAG") ? "INTERLINK: TESTING" : "INTERLINK: NOMINAL";
-      $("statusRight").textContent = (cfg.mode==="RESEAL") ? "SECURITY: ARMED" : "AI SYSTEMS: LOCKED";
-
       $("footerRight").textContent = `${thLabel} / MISSION TEAM ${pNo}`;
       document.title = `Sealing Pillar Console [${th}-No.${pNo}]`;
 
@@ -934,9 +1299,13 @@
       setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 500);
     }
 
-    // init
+    // ========= init =========
+    makeBars();
     applyConfig(readQuery());
     ["bits1","bits2","bits3","bits4"].forEach(fillBits);
+
+    // base percent like reference
+    setPct(BASE_PCT);
 
     $("apply").addEventListener("click", ()=>{
       applyConfig(currentCfg());
@@ -944,12 +1313,82 @@
       setTimeout(()=>{ $("chipLink").textContent = "LINK"; }, 350);
     });
 
+    // overlay dismiss
+    $("unlockOverlay")?.addEventListener("click", ()=>{
+      const o = $("unlockOverlay");
+      if(!o) return;
+      o.classList.remove("on");
+      o.setAttribute("aria-hidden","true");
+    });
+
+    // restart button -> start puzzle
+    const restartBtn = $("restartBtn");
+    if(restartBtn){
+      restartBtn.addEventListener("click", ()=>{
+        if(puzzleActive) return;
+        restartBtn.disabled = true;
+        enablePuzzle();
+
+        // debug flag auto-solve
+        if(sessionStorage.getItem(KEY_DEBUG_SOLVE) === "1"){
+          sessionStorage.removeItem(KEY_DEBUG_SOLVE);
+          setTimeout(()=>solvePuzzle(), 220);
+        }
+      });
+    }
+
+    // Konami debug: ↑↑↓↓←→←→ba
+    const KONAMI = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
+    const buf = [];
     window.addEventListener("keydown", (e)=>{
       if(e.shiftKey && (e.key==="E" || e.key==="e")){
         exportConfig(currentCfg());
+        return;
+      }
+      let k = e.key;
+      if(k.length === 1) k = k.toLowerCase();
+      buf.push(k);
+      while(buf.length > KONAMI.length) buf.shift();
+      const ok = KONAMI.every((v,idx)=>buf[idx]===v);
+      if(ok){
+        if(puzzleActive && sessionStorage.getItem(KEY_SOLVED) !== "1"){
+          solvePuzzle();
+        } else {
+          sessionStorage.setItem(KEY_DEBUG_SOLVE, "1");
+        }
       }
     });
 
+    // ========= cinematic flow =========
+    const solved = sessionStorage.getItem(KEY_SOLVED) === "1";
+    const cinematic = sessionStorage.getItem(KEY_CINE) === "1";
+    if(cinematic && !solved){
+      sessionStorage.removeItem(KEY_CINE);
+      document.body.classList.add("cinematic");
+
+      setTimeout(()=>document.body.classList.add("radarShown"), 160);
+      setTimeout(()=>document.body.classList.add("pctShown"), 560);
+      setTimeout(()=>document.body.classList.add("decryptShown"), 1050);
+
+      setTimeout(()=>{
+        if(!restartBtn) return;
+        if(restartBtn.disabled) return;
+        restartBtn.click();
+      }, 1700);
+    } else {
+      document.body.classList.remove("cinematic");
+      if(solved){
+        if(restartBtn) restartBtn.disabled = true;
+        setPct(100);
+        if($("statusRight")){
+          $("statusRight").textContent = "AI SYSTEMS: UNLOCKED";
+          $("statusRight").style.borderColor = "rgba(57,255,122,.55)";
+          $("statusRight").style.color = "var(--green)";
+        }
+      }
+    }
+
+    // ========= ambient updates =========
     let tick = 0;
     setInterval(()=>{
       tick++;
@@ -959,21 +1398,19 @@
       $("t3").textContent = "Decrypting" + dots(tick+2);
       $("t4").textContent = "Decrypting" + dots(tick+3);
 
-      const p = Math.max(0, Math.min(99, Math.round( 3 + Math.sin(tick/6)*2 + (Math.random()*2-1) )));
-      $("pct").textContent = pad2(p);
-      $("rank").textContent = calcRank(p);
+      if(tick % 5 === 0){
+        ["bits1","bits2","bits3","bits4"].forEach(fillBits);
+      }
 
       if(tick % 12 === 0){
         $("stageMid").textContent = (Math.random() < .7) ? "STAGE 04" : "STAGE 05";
       }
 
-      for(const b of barEls){
-        const cur = parseInt(b.style.height,10) || 30;
-        b.style.height = Math.max(8, Math.min(98, cur + rnd(-9,9))) + "%";
-      }
-
-      if(tick % 5 === 0){
-        ["bits1","bits2","bits3","bits4"].forEach(fillBits);
+      if(!puzzleActive && !solved){
+        for(const b of barEls){
+          const cur = parseFloat(b.style.height) || 30;
+          b.style.height = clamp(cur + rnd(-9,9), 8, 98) + "%";
+        }
       }
 
       const states = ["Decrypting Stage 04B","Stage Locked","Nominal Sync","Interlock Pending","Key Match: Partial"];
@@ -983,7 +1420,6 @@
 
       ang = (ang + 8) % 360;
       if(sweep) sweep.setAttribute("transform", `rotate(${ang} 0 0)`);
-
     }, 650);
   </script>
 </body>
