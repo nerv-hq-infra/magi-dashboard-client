@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Sealing Pillar Restoration Console</title>
   <meta name="description" content="Amber terminal-style UI (inspired, original composition) - multi-pillar compatible" />
+  <script>
+    // Gate: require the route-map step before entering this console.
+    // If the page is opened directly, redirect to the route map.
+    (() => {
+      const KEY = "MAGI_STAGE_UNLOCK";
+      try {
+        if(sessionStorage.getItem(KEY) === "1") return;
+        const next = encodeURIComponent("stage-layer-map.html");
+        location.replace(`stage-route-map.html?next=${next}`);
+      } catch (e) {
+        location.replace("stage-route-map.html?next=stage-layer-map.html");
+      }
+    })();
+  </script>
   <style>
     :root{
       --bg:#06080b;

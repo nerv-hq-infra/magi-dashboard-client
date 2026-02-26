@@ -1,0 +1,608 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Route Map // Access</title>
+  <meta name="description" content="Route-map gate before entering stage-layer-map" />
+  <style>
+    :root{
+      --bg:#06080b;
+      --panel: rgba(0,0,0,.18);
+      --amber:#ffb14a;
+      --amber2:#ff8a2a;
+      --line: rgba(255,177,74,.55);
+      --line2: rgba(255,177,74,.25);
+      --line3: rgba(255,177,74,.12);
+      --red:#ff3b3b;
+      --green:#39ff7a;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+      --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Noto Sans JP", sans-serif;
+      --glow: 0 0 16px rgba(255,177,74,.22);
+      --glow2: 0 0 26px rgba(255,177,74,.18);
+      --shadow: 0 26px 100px rgba(0,0,0,.58);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      color:var(--amber);
+      font-family: var(--mono);
+      background:
+        radial-gradient(1100px 700px at 50% 20%, rgba(255,177,74,.06), transparent 60%),
+        radial-gradient(900px 560px at 30% 60%, rgba(255,177,74,.03), transparent 55%),
+        var(--bg);
+      letter-spacing:.02em;
+      overflow-x:hidden;
+    }
+    /* CRT overlay */
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      pointer-events:none;
+      background:
+        repeating-linear-gradient(to bottom,
+          rgba(255,255,255,.03), rgba(255,255,255,.03) 1px,
+          rgba(0,0,0,.00) 2px, rgba(0,0,0,.00) 4px),
+        repeating-linear-gradient(90deg,
+          rgba(255,177,74,.018), rgba(255,177,74,.018) 1px,
+          transparent 2px, transparent 6px),
+        radial-gradient(900px 620px at 50% 45%, rgba(255,177,74,.10), transparent 62%);
+      mix-blend-mode: screen;
+      opacity:.22;
+    }
+    body::after{
+      content:"";
+      position:fixed; inset:-20%;
+      pointer-events:none;
+      background:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='260' height='260' filter='url(%23n)' opacity='.25'/%3E%3C/svg%3E");
+      opacity:.09;
+      transform: rotate(.6deg);
+    }
+
+    .wrap{max-width:1200px; margin:0 auto; padding:18px 18px 30px;}
+    .frame{
+      position:relative;
+      border:2px solid var(--line);
+      background: linear-gradient(180deg, rgba(255,177,74,.028), transparent 40%), var(--panel);
+      box-shadow: var(--shadow);
+      padding: 12px;
+      overflow:hidden;
+    }
+    .frame::before{content:""; position:absolute; inset:10px; border:1px solid var(--line2); pointer-events:none;}
+
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      font-size:12px;
+      padding:2px 4px 10px;
+      opacity:.95;
+    }
+    .topbar a{color:inherit; text-decoration:none}
+    .chip{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid var(--line);
+      padding: 2px 10px;
+      background: rgba(255,177,74,.06);
+      box-shadow: var(--glow);
+      font-weight:700;
+      letter-spacing:.06em;
+      user-select:none;
+      white-space:nowrap;
+    }
+    .chip--link{cursor:pointer}
+    .chip--link:hover{background: rgba(255,177,74,.10)}
+    .chip--danger{border-color: rgba(255,59,59,.7); box-shadow: 0 0 16px rgba(255,59,59,.16)}
+
+    .headline{
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      padding: 6px 4px 12px;
+      border-bottom:1px solid var(--line2);
+      margin-bottom: 12px;
+    }
+    .h1{
+      margin:0;
+      font-family: var(--sans);
+      font-size: 46px;
+      line-height: 1;
+      letter-spacing: -0.03em;
+      text-shadow: var(--glow2);
+    }
+    .sub{margin:0 0 6px; font-size:12px; opacity:.86; text-align:right; max-width:560px;}
+
+    .layout{display:grid; grid-template-columns: 1fr; gap:12px;}
+    .mapWrap{
+      position:relative;
+      border:1px solid var(--line2);
+      background: rgba(0,0,0,.18);
+      box-shadow: var(--glow);
+      overflow:hidden;
+      padding:10px;
+      min-height: 440px;
+    }
+    .mapWrap::before{
+      content:"";
+      position:absolute; inset:0;
+      background:
+        linear-gradient(transparent, rgba(255,177,74,.03)),
+        repeating-linear-gradient(90deg, rgba(255,177,74,.04) 0, rgba(255,177,74,.04) 1px, transparent 1px, transparent 120px),
+        repeating-linear-gradient(0deg, rgba(255,177,74,.03) 0, rgba(255,177,74,.03) 1px, transparent 1px, transparent 90px);
+      opacity:.16;
+      pointer-events:none;
+    }
+
+    svg{width:100%; height: 420px; display:block; position:relative; z-index:1}
+
+    .hud{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px 12px;
+      align-items:center;
+      justify-content:space-between;
+      padding: 8px 4px 2px;
+      border-top:1px solid var(--line2);
+      margin-top: 8px;
+    }
+    .hudLeft{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .label{opacity:.86; font-size:12px}
+    .input{
+      width:min(720px, 100%);
+      border:1px solid var(--line2);
+      background: rgba(255,177,74,.06);
+      color: var(--amber);
+      font-family: var(--mono);
+      font-size: 14px;
+      padding: 10px 10px;
+      outline:none;
+      box-shadow: inset 0 0 0 1px rgba(0,0,0,.25);
+    }
+    .btnrow{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .btn{
+      cursor:pointer;
+      border:1px solid var(--line);
+      background: rgba(255,177,74,.07);
+      color: var(--amber);
+      font-family: var(--sans);
+      font-weight: 900;
+      letter-spacing:.08em;
+      padding: 10px 12px;
+      box-shadow: var(--glow);
+      user-select:none;
+    }
+    .btn:disabled{opacity:.45; cursor:not-allowed}
+    .status{font-size:12px; opacity:.9}
+    .status .ok{color:var(--green)}
+    .status .bad{color:var(--red)}
+    .hint{font-size:12px; opacity:.72}
+
+    /* SVG styling */
+    .edge{stroke: rgba(255,177,74,.34); stroke-width:2;}
+    .edge.active{stroke: rgba(57,255,122,.70); stroke-width:2.6; filter: drop-shadow(0 0 8px rgba(57,255,122,.16));}
+    .node rect{
+      fill: rgba(255,177,74,.10);
+      stroke: rgba(255,177,74,.62);
+      stroke-width:1.2;
+      rx:3; ry:3;
+      filter: drop-shadow(0 0 10px rgba(255,177,74,.12));
+    }
+    .node text{fill: var(--amber); font-size:12px; font-weight:700}
+    .node{cursor:pointer}
+    .node:hover rect{fill: rgba(255,177,74,.16)}
+    .node.active rect{stroke: rgba(57,255,122,.82); fill: rgba(57,255,122,.12)}
+    .node.active text{fill: var(--green)}
+    .node.hit rect{stroke: rgba(255,59,59,.92); fill: rgba(255,59,59,.18)}
+    .node.hit text{fill: var(--red)}
+    .cross{
+      stroke: rgba(255,177,74,.22);
+      stroke-width:2;
+    }
+    .border{
+      stroke: rgba(255,177,74,.30);
+      fill: none;
+      stroke-width:2;
+    }
+
+    @media (max-width:700px){
+      svg{height: 360px}
+      .h1{font-size: 36px}
+      .sub{text-align:left}
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="frame" aria-label="route-map gate">
+      <div class="topbar">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center">
+          <a class="chip chip--link" href="index.html">← HOME</a>
+          <span class="chip">MODE: <b>ROUTE</b></span>
+          <span class="chip chip--danger">LOCKED</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center">
+          <span class="chip" id="nextChip">NEXT: <b>stage-layer-map.html</b></span>
+          <span class="chip" id="clock">--:--:--</span>
+        </div>
+      </div>
+
+      <div class="headline">
+        <h1 class="h1">ROUTE MAP</h1>
+        <p class="sub">枝分かれに沿ってブロック文字を入力し、左端ターゲットに到達せよ。到達するとブロックが赤化し、次ページへ移行する。</p>
+      </div>
+
+      <div class="layout">
+        <div class="mapWrap">
+          <svg id="svg" viewBox="0 0 1000 620" role="img" aria-label="route map">
+            <!-- drawn by JS -->
+          </svg>
+
+          <div class="hud">
+            <div class="hudLeft">
+              <div class="label">ROUTE:</div>
+              <input class="input" id="routeIn" placeholder="例: R0 A1 B1 C2 STAGE  (space or > で区切り)" autocomplete="off" spellcheck="false" />
+            </div>
+            <div class="btnrow">
+              <button class="btn" id="resetBtn" type="button">RESET</button>
+              <button class="btn" id="goBtn" type="button" disabled>ACCESS</button>
+            </div>
+          </div>
+          <div class="hud" style="border-top:none; padding-top:0; margin-top:0;">
+            <div class="status" id="status"><span class="hint">クリックでノードを追加してもOK。最初は <b>R0</b> から。</span></div>
+            <div class="hint" id="hint"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    (() => {
+      const KEY = "MAGI_STAGE_UNLOCK";
+      const qs = new URLSearchParams(location.search);
+      const next = (qs.get("next") || "stage-layer-map.html").replace(/\s/g, "");
+
+      // Show next target in UI
+      const nextChip = document.getElementById("nextChip");
+      if(nextChip){
+        const b = nextChip.querySelector("b");
+        if(b) b.textContent = next;
+      }
+
+      // clock
+      const clock = document.getElementById("clock");
+      const tick = () => {
+        const d = new Date();
+        const z = (n) => String(n).padStart(2,"0");
+        if(clock) clock.textContent = `${z(d.getHours())}:${z(d.getMinutes())}:${z(d.getSeconds())}`;
+      };
+      tick();
+      setInterval(tick, 1000);
+
+      // tiny beep
+      let ac;
+      function beep(freq=880, ms=60, type="square", gain=0.03){
+        try {
+          ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+          const o = ac.createOscillator();
+          const g = ac.createGain();
+          o.type = type;
+          o.frequency.value = freq;
+          g.gain.value = gain;
+          o.connect(g); g.connect(ac.destination);
+          o.start();
+          setTimeout(() => { try{o.stop();}catch(e){} }, ms);
+        } catch(e){}
+      }
+
+      const svg = document.getElementById("svg");
+      const routeIn = document.getElementById("routeIn");
+      const resetBtn = document.getElementById("resetBtn");
+      const goBtn = document.getElementById("goBtn");
+      const status = document.getElementById("status");
+      const hint = document.getElementById("hint");
+
+      const ROOT = "R0";
+      const TARGET = "STAGE";
+
+      // Node map (right -> left). Labels are visible so the player can trace a branch.
+      const NODES = [
+        // root
+        {label:"R0", x:940, y:310},
+
+        // layer 1
+        {label:"A1", x:770, y:150},
+        {label:"A2", x:770, y:310},
+        {label:"A3", x:770, y:470},
+
+        // layer 2
+        {label:"B1", x:600, y:90},
+        {label:"B2", x:600, y:210},
+        {label:"B3", x:600, y:280},
+        {label:"B4", x:600, y:360},
+        {label:"B5", x:600, y:430},
+        {label:"B6", x:600, y:530},
+
+        // layer 3
+        {label:"C1", x:430, y:70},
+        {label:"C2", x:430, y:130},
+        {label:"C3", x:430, y:190},
+        {label:"C4", x:430, y:250},
+        {label:"C5", x:430, y:300},
+        {label:"C6", x:430, y:350},
+        {label:"C7", x:430, y:420},
+        {label:"C8", x:430, y:470},
+        {label:"C9", x:430, y:520},
+        {label:"C10",x:430, y:570},
+
+        // layer 4
+        {label:"D1", x:260, y:60},
+        {label:"D2", x:260, y:95},
+        {label:"D3", x:260, y:130},
+        {label:"D4", x:260, y:180},
+        {label:"D5", x:260, y:220},
+        {label:"D6", x:260, y:260},
+        {label:"D7", x:260, y:300},
+        {label:"D8", x:260, y:330},
+        {label:"D9", x:260, y:360},
+        {label:"D10",x:260, y:420},
+        {label:"D11",x:260, y:450},
+        {label:"D12",x:260, y:480},
+        {label:"D13",x:260, y:520},
+        {label:"D14",x:260, y:550},
+        {label:"D15",x:260, y:590},
+
+        // leaves (left edge)
+        {label:"L01", x:110, y:105},
+        {label:"STAGE", x:80, y:140},
+        {label:"L02", x:110, y:175},
+        {label:"L03", x:110, y:205},
+        {label:"L04", x:110, y:235},
+        {label:"L05", x:110, y:300},
+        {label:"L06", x:110, y:420},
+        {label:"L07", x:110, y:525},
+        {label:"L08", x:110, y:585},
+      ];
+
+      const EDGES = [
+        ["R0","A1"],["R0","A2"],["R0","A3"],
+        ["A1","B1"],["A1","B2"],
+        ["A2","B3"],["A2","B4"],
+        ["A3","B5"],["A3","B6"],
+
+        ["B1","C1"],["B1","C2"],
+        ["B2","C3"],["B2","C4"],
+        ["B3","C5"],["B3","C6"],
+        ["B4","C6"],["B4","C7"],
+        ["B5","C7"],["B5","C8"],["B5","C9"],
+        ["B6","C9"],["B6","C10"],
+
+        ["C1","D1"],["C1","D2"],
+        ["C2","D3"],
+        ["C3","D4"],["C3","D5"],
+        ["C4","D6"],
+        ["C5","D7"],["C5","D8"],
+        ["C6","D8"],["C6","D9"],
+        ["C7","D10"],["C7","D11"],
+        ["C8","D12"],
+        ["C9","D13"],["C9","D14"],
+        ["C10","D15"],
+
+        ["D3","L01"],["D3","STAGE"],["D3","L02"],
+        ["D4","L03"],["D5","L04"],
+        ["D7","L05"],["D10","L06"],["D13","L07"],["D15","L08"],
+      ];
+
+      const nodeByLabel = Object.fromEntries(NODES.map(n => [n.label, n]));
+      const edgeSet = new Set(EDGES.map(([a,b]) => `${a}→${b}`));
+      const out = {};
+      for(const [a,b] of EDGES){ (out[a] ||= []).push(b); }
+
+      function el(name, attrs={}){
+        const e = document.createElementNS("http://www.w3.org/2000/svg", name);
+        for(const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
+        return e;
+      }
+
+      function clearSvg(){ while(svg.firstChild) svg.removeChild(svg.firstChild); }
+
+      function drawBase(){
+        // border
+        svg.appendChild(el("rect", {x:24, y:24, width:952, height:572, class:"border"}));
+
+        // crosses like the reference
+        const crosses = [
+          [85,70],[160,520],[520,85],[520,530],[905,120],[905,490],[120,320],[880,320]
+        ];
+        for(const [cx,cy] of crosses){
+          svg.appendChild(el("line", {x1:cx-12,y1:cy,x2:cx+12,y2:cy, class:"cross"}));
+          svg.appendChild(el("line", {x1:cx,y1:cy-12,x2:cx,y2:cy+12, class:"cross"}));
+        }
+      }
+
+      const edgeEls = new Map();
+      const nodeEls = new Map();
+
+      function drawGraph(){
+        clearSvg();
+        drawBase();
+
+        // edges first
+        for(const [a,b] of EDGES){
+          const na = nodeByLabel[a];
+          const nb = nodeByLabel[b];
+          if(!na || !nb) continue;
+          const line = el("line", {x1:na.x, y1:na.y, x2:nb.x, y2:nb.y, class:"edge"});
+          svg.appendChild(line);
+          edgeEls.set(`${a}→${b}`, line);
+        }
+
+        // nodes
+        for(const n of NODES){
+          const w = Math.max(44, (n.label.length * 8) + 18);
+          const h = 22;
+          const g = el("g", {class:"node", "data-label": n.label, transform:`translate(${n.x} ${n.y})`});
+          const r = el("rect", {x: -w/2, y: -h/2, width: w, height: h});
+          const t = el("text", {x:0, y:4, "text-anchor":"middle"});
+          t.textContent = n.label;
+          g.appendChild(r);
+          g.appendChild(t);
+          svg.appendChild(g);
+          nodeEls.set(n.label, g);
+        }
+      }
+
+      function parseRoute(s){
+        return (s || "")
+          .split(/[\s>\/]+/)
+          .map(x => x.trim())
+          .filter(Boolean)
+          .map(x => x.toUpperCase());
+      }
+
+      function setStatus(html){ if(status) status.innerHTML = html; }
+      function setHint(txt){ if(hint) hint.textContent = txt || ""; }
+
+      function validate(route){
+        if(route.length === 0) return {ok:false, partial:true, msg:""};
+        if(route[0] !== ROOT) return {ok:false, partial:false, msg:`先頭は <b>${ROOT}</b> から。`};
+        for(let i=0;i<route.length;i++){
+          if(!nodeByLabel[route[i]]) return {ok:false, partial:false, msg:`未知ノード: <b>${escapeHtml(route[i])}</b>`};
+          if(i===0) continue;
+          const a = route[i-1], b = route[i];
+          if(!edgeSet.has(`${a}→${b}`)) return {ok:false, partial:false, msg:`接続なし: <b>${escapeHtml(a)}</b> → <b>${escapeHtml(b)}</b>`};
+        }
+        const last = route[route.length-1];
+        const isLeaf = !out[last] || out[last].length === 0;
+        const isTarget = last === TARGET;
+        return {ok:true, last, isLeaf, isTarget};
+      }
+
+      function escapeHtml(s){
+        return String(s).replace(/[&<>"]/g, (c) => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+      }
+
+      function clearHighlights(){
+        for(const g of nodeEls.values()) g.classList.remove("active","hit");
+        for(const l of edgeEls.values()) l.classList.remove("active");
+      }
+
+      let armed = false;
+      let autoTimer = null;
+      function applyRoute(){
+        const route = parseRoute(routeIn.value);
+        clearHighlights();
+        goBtn.disabled = true;
+        armed = false;
+        if(autoTimer){ clearTimeout(autoTimer); autoTimer = null; }
+
+        const res = validate(route);
+        if(!route.length){
+          setStatus(`<span class="hint">クリックでノードを追加してもOK。最初は <b>${ROOT}</b> から。</span>`);
+          setHint("例: R0 > A1 > B1 > C2 > D3 > STAGE");
+          return;
+        }
+
+        // highlight nodes + edges
+        for(let i=0;i<route.length;i++){
+          const lab = route[i];
+          nodeEls.get(lab)?.classList.add("active");
+          if(i>0){
+            edgeEls.get(`${route[i-1]}→${route[i]}`)?.classList.add("active");
+          }
+        }
+
+        if(!res.ok){
+          setStatus(`<span class="bad">ROUTE ERROR</span> / ${res.msg}`);
+          setHint("分岐に沿った順序で入力しているか確認");
+          return;
+        }
+
+        if(res.isTarget){
+          nodeEls.get(TARGET)?.classList.add("hit");
+          setStatus(`<span class="ok">TARGET LOCK</span> / <b>${TARGET}</b> reached`);
+          setHint("認証完了。まもなく移行…");
+          goBtn.disabled = false;
+          armed = true;
+          autoTimer = setTimeout(() => armAndGo(), 900);
+          return;
+        }
+
+        const nexts = out[res.last] || [];
+        const nextText = nexts.length ? `next: ${nexts.map(x=>`<b>${escapeHtml(x)}</b>`).join(" ")}` : "dead end";
+        setStatus(`<span class="ok">ROUTE OK</span> / current: <b>${escapeHtml(res.last)}</b> / ${nextText}`);
+        setHint("末端（左端）まで入力するとターゲットが赤化");
+      }
+
+      function armAndGo(){
+        if(!armed) return;
+        try{ sessionStorage.setItem(KEY, "1"); }catch(e){}
+        beep(1040, 70, "square", 0.04);
+        setStatus(`<span class="ok">ACCESS GRANTED</span> / redirecting...`);
+        setHint("");
+        routeIn.disabled = true;
+        resetBtn.disabled = true;
+        goBtn.disabled = true;
+        setTimeout(() => { location.href = next; }, 650);
+      }
+
+      function appendToken(tok){
+        const cur = parseRoute(routeIn.value);
+        if(cur.length === 0){
+          routeIn.value = tok;
+          applyRoute();
+          return;
+        }
+        const cand = [...cur, tok];
+        const res = validate(cand);
+        if(res.ok){
+          routeIn.value = cand.join(" ");
+          beep(900, 35, "square", 0.03);
+          applyRoute();
+        } else {
+          beep(240, 110, "sawtooth", 0.02);
+          setStatus(`<span class="bad">DENIED</span> / ${res.msg || "invalid"}`);
+        }
+      }
+
+      drawGraph();
+      applyRoute();
+
+      routeIn.addEventListener("input", () => { applyRoute(); });
+      routeIn.addEventListener("keydown", (e) => {
+        if(e.key === "Enter"){
+          e.preventDefault();
+          armAndGo();
+        }
+      });
+      resetBtn.addEventListener("click", () => {
+        routeIn.value = "";
+        routeIn.disabled = false;
+        resetBtn.disabled = false;
+        goBtn.disabled = true;
+        armed = false;
+        beep(520, 55, "square", 0.03);
+        applyRoute();
+      });
+      goBtn.addEventListener("click", armAndGo);
+
+      svg.addEventListener("click", (e) => {
+        const g = e.target.closest(".node");
+        if(!g) return;
+        const label = g.getAttribute("data-label");
+        if(!label) return;
+        appendToken(label);
+      });
+
+      // Auto-focus
+      setTimeout(() => routeIn.focus(), 100);
+    })();
+  </script>
+</body>
+</html>
