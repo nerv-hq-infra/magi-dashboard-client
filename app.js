@@ -127,17 +127,6 @@
     });
   }
 
-  // ====== panic overlay ======
-  const overlay = $("overlay");
-  $("panic")?.addEventListener("click", () => {
-    beep(220, 120, "sawtooth", 0.03);
-    overlay.hidden = false;
-  });
-  $("closeOverlay")?.addEventListener("click", () => {
-    beep(980, 60, "square", 0.03);
-    overlay.hidden = true;
-  });
-
   // ====== FILES page ======
   const FILES_DB = [
     { id:"log-0001", type:"log",  title:"起動ログ / 設計ルール", tag:["ui","spec"], date:"2026-02-26", href:"about.html" },
