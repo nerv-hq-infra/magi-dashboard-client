@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TERMINAL // ENTRY</title>
-  <meta name="description" content="警告UI・端末ログ風の体験サイト（オリジナルデザイン）" />
+  <meta name="description" content="端末ログ風のインターフェース（平常運用モード）" />
   <link rel="stylesheet" href="style.css?v=20260226-1">
   <script defer src="app.js?v=20260226-1"></script>
 </head>
@@ -16,7 +16,7 @@
 
   <header class="topbar">
     <div class="topbar__left">
-      <span class="chip chip--alert">ALERT</span>
+      <span class="chip">OPERATION: <b class="ok">NORMAL</b></span>
       <span class="chip">SECTOR: <b id="sector">A-03</b></span>
       <span class="chip">LINK: <b class="ok">OK</b></span>
     </div>
@@ -53,12 +53,19 @@
             <div class="card__desc">コマンド入力・隠し導線</div>
           </a>
 
+          <a class="card" href="visitor.html" data-sfx="tap">
+            <div class="card__kicker mono">PUBLIC</div>
+            <div class="card__title">VISITORS</div>
+            <div class="card__desc">来訪者案内・受付手順</div>
+          </a>
+
           <a class="card" href="about.html" data-sfx="tap">
             <div class="card__kicker mono">INFO</div>
             <div class="card__title">ABOUT</div>
             <div class="card__desc">このサイトの設計・注意</div>
           </a>
-</div>
+
+        </div>
 
         <div class="divider"></div>
 
@@ -69,7 +76,7 @@
           </div>
           <div class="note">
             <div class="note__title mono">STATUS</div>
-            <div class="note__body"><span class="ok">SYSTEM ONLINE</span> / <span class="warn">WARNING LEVEL: 1</span></div>
+            <div class="note__body"><span class="ok">SYSTEM ONLINE</span> / <span class="ok">OPERATION MODE: NORMAL</span></div>
           </div>
         </div>
       </div>
