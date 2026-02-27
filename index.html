@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>TERMINAL // ENTRY</title>
-  <meta name="description" content="端末ログ風のインターフェース（平常運用モード）" />
+  <meta name="description" content="警告UI・端末ログ風の体験サイト（オリジナルデザイン）" />
   <link rel="stylesheet" href="style.css?v=20260226-1">
   <script defer src="app.js?v=20260226-1"></script>
 </head>
@@ -16,7 +16,7 @@
 
   <header class="topbar">
     <div class="topbar__left">
-      <span class="chip">OPERATION: <b class="ok">NORMAL</b></span>
+      <span class="chip chip--alert">ALERT</span>
       <span class="chip">SECTOR: <b id="sector">A-03</b></span>
       <span class="chip">LINK: <b class="ok">OK</b></span>
     </div>
@@ -56,7 +56,7 @@
           <a class="card" href="visitor.html" data-sfx="tap">
             <div class="card__kicker mono">PUBLIC</div>
             <div class="card__title">VISITORS</div>
-            <div class="card__desc">来訪者案内・受付手順</div>
+            <div class="card__desc">来訪者向け案内・受付手順</div>
           </a>
 
           <a class="card" href="about.html" data-sfx="tap">
@@ -65,6 +65,11 @@
             <div class="card__desc">このサイトの設計・注意</div>
           </a>
 
+          <button class="card card--btn" id="panic" type="button">
+            <div class="card__kicker mono">EMERGENCY</div>
+            <div class="card__title">PANIC</div>
+            <div class="card__desc">警告演出（オーバーレイ）</div>
+          </button>
         </div>
 
         <div class="divider"></div>
@@ -76,7 +81,7 @@
           </div>
           <div class="note">
             <div class="note__title mono">STATUS</div>
-            <div class="note__body"><span class="ok">SYSTEM ONLINE</span> / <span class="ok">OPERATION MODE: NORMAL</span></div>
+            <div class="note__body"><span class="ok">SYSTEM ONLINE</span> / <span class="warn">WARNING LEVEL: 1</span></div>
           </div>
         </div>
       </div>
@@ -86,5 +91,17 @@
       <span class="mono">© tomoponz / original terminal UI</span>
     </footer>
   </main>
+
+  <!-- Panic overlay -->
+  <div class="overlay" id="overlay" hidden>
+    <div class="overlay__panel panel">
+      <div class="overlay__title mono">WARNING</div>
+      <p class="overlay__text">システムは異常を検知した。落ち着け。呼吸しろ。次の手を選べ。</p>
+      <div class="btnrow">
+        <button class="btn primary" id="closeOverlay" type="button">ACK</button>
+        <a class="btn" href="terminal.html">OPEN TERMINAL</a>
+      </div>
+    </div>
+  </div>
 </body>
 </html>

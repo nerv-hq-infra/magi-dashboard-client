@@ -3,82 +3,357 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>VISITOR // GUIDE</title>
-  <meta name="description" content="来訪者向け案内（受付手順・注意事項）" />
-  <link rel="stylesheet" href="style.css?v=20260226-1">
-  <script defer src="app.js?v=20260226-1"></script>
+  <title>NERV // VISITORS</title>
+  <meta name="description" content="来訪者向け案内・受付手順（NERVオリエンテーション）" />
+  <link rel="stylesheet" href="style.css?v=20260227-visit">
+  <script defer src="app.js?v=20260227-visit"></script>
+  <style>
+    /* === Visitor Pamphlet (Figma reference) === */
+    .wrap.wrap--wide{max-width:1140px}
+
+    .pamphlet{
+      padding: 0;
+      overflow:hidden;
+      background: rgba(0,0,0,.18);
+    }
+    .pamphlet__paper{
+      color:#0b0c0f;
+      background:
+        radial-gradient(1200px 700px at 15% 10%, rgba(255,0,0,.10), transparent 55%),
+        radial-gradient(900px 600px at 85% 20%, rgba(255,0,0,.06), transparent 55%),
+        linear-gradient(180deg, #f8f6ef, #f3f1e7);
+      border: 1px solid rgba(0,0,0,.35);
+      box-shadow: 0 22px 110px rgba(0,0,0,.50);
+      border-radius: var(--r);
+      position:relative;
+    }
+    .pamphlet__paper::before{
+      content:"";
+      position:absolute; inset:0;
+      pointer-events:none;
+      opacity:.10;
+      background-image:
+        radial-gradient(circle at 10% 30%, rgba(0,0,0,.25), transparent 18%),
+        radial-gradient(circle at 80% 20%, rgba(0,0,0,.20), transparent 16%),
+        radial-gradient(circle at 30% 80%, rgba(0,0,0,.22), transparent 18%),
+        radial-gradient(circle at 60% 60%, rgba(0,0,0,.18), transparent 16%);
+      mix-blend-mode:multiply;
+    }
+
+    .pamphlet__top{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      padding: 14px 16px;
+      border-bottom: 2px solid rgba(0,0,0,.18);
+      background: linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,.20));
+    }
+    .pamphlet__top .meta{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .tag{
+      display:inline-flex; align-items:center; gap:8px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,.25);
+      background: rgba(255,255,255,.55);
+      font-size: 12px;
+      letter-spacing:.08em;
+    }
+    .tag--red{border-color: rgba(255,0,0,.55); box-shadow: 0 0 0 2px rgba(255,0,0,.10) inset}
+    .tag b{letter-spacing:.06em}
+
+    .pamphlet__body{padding: 22px 22px 18px; position:relative}
+
+    .cover{
+      display:grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      align-items:stretch;
+    }
+    @media (max-width:900px){
+      .cover{grid-template-columns:1fr;}
+    }
+
+    .cover__img{
+      border: 3px solid rgba(0,0,0,.75);
+      background:#fff;
+      border-radius: 14px;
+      overflow:hidden;
+      box-shadow: 0 18px 70px rgba(0,0,0,.25);
+    }
+    .cover__img img{display:block; width:100%; height:auto;}
+
+    .cover__right{
+      border: 1px solid rgba(0,0,0,.22);
+      border-radius: 14px;
+      background: rgba(255,255,255,.55);
+      padding: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.12);
+    }
+
+    .h1p{
+      margin:0;
+      font-size: 34px;
+      letter-spacing:.12em;
+      font-weight: 900;
+      text-transform:uppercase;
+      line-height:1.15;
+    }
+    .h1p .red{color:#d80018}
+    .lead{margin:10px 0 0; color: rgba(0,0,0,.72); line-height:1.8}
+
+    .stamp{
+      margin-top:14px;
+      display:inline-block;
+      padding: 8px 12px;
+      border: 3px solid rgba(216,0,24,.85);
+      color: rgba(216,0,24,.85);
+      font-weight: 900;
+      letter-spacing:.18em;
+      text-transform:uppercase;
+      transform: rotate(-6deg);
+      border-radius: 6px;
+      background: rgba(255,255,255,.65);
+    }
+
+    .toc{
+      margin-top: 18px;
+      border-top: 2px solid rgba(0,0,0,.16);
+      padding-top: 14px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+      font-weight: 800;
+    }
+    @media (max-width:900px){.toc{grid-template-columns:1fr}}
+
+    .toc a{
+      color: inherit;
+      text-decoration:none;
+      display:flex;
+      align-items:flex-end;
+      justify-content:space-between;
+      gap:12px;
+      border-bottom: 1px solid rgba(0,0,0,.18);
+      padding-bottom: 4px;
+    }
+    .toc a:hover{color:#d80018; border-color: rgba(216,0,24,.55)}
+    .toc .p{font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Noto Sans Mono", monospace; opacity:.55}
+
+    .sec{margin-top: 22px; padding-top: 18px; border-top: 2px solid rgba(0,0,0,.12); scroll-margin-top: 90px}
+    .sec__head{display:flex; align-items:flex-end; gap:12px; border-bottom: 3px solid rgba(0,0,0,.85); padding-bottom: 6px; margin-bottom: 10px}
+    .sec__num{font-size: 56px; font-weight: 900; color: rgba(0,0,0,.10); line-height:1}
+    .sec__title{margin:0; font-size: 22px; font-weight: 900; letter-spacing:.06em}
+
+    .p{margin: 10px 0 0; line-height:1.9; color: rgba(0,0,0,.82)}
+
+    .grid2{display:grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 12px}
+    @media (max-width:900px){.grid2{grid-template-columns:1fr}}
+
+    .box{
+      border: 1px solid rgba(0,0,0,.22);
+      background: rgba(255,255,255,.55);
+      border-radius: 14px;
+      padding: 14px;
+    }
+    .box__k{font-size: 12px; letter-spacing:.16em; font-weight: 900; text-transform:uppercase; color: rgba(0,0,0,.60)}
+    .box__t{margin: 6px 0 0; font-size: 16px; font-weight: 900}
+
+    .levels{display:flex; flex-direction:column; gap:10px; margin-top:10px}
+    .lv{display:flex; align-items:center; gap:10px; padding: 8px 10px; border-bottom: 1px solid rgba(0,0,0,.10)}
+    .lv:last-child{border-bottom:none}
+    .badge{
+      width: 52px; height: 30px; display:flex; align-items:center; justify-content:center;
+      border-radius: 8px;
+      font-weight: 900;
+      color:#fff;
+      box-shadow: 0 8px 20px rgba(0,0,0,.15);
+    }
+    .bA{background:#2aa84a}
+    .bB{background:#2d60d1}
+    .bC{background:#d7b400}
+    .bD{background:#d46a14}
+    .bEEE{background:#d80018}
+    .lv span{color: rgba(0,0,0,.75); font-weight: 700}
+
+    .warning{
+      margin-top: 12px;
+      display:flex; gap:10px; align-items:flex-start;
+      border-left: 6px solid #d80018;
+      background: rgba(216,0,24,.06);
+      padding: 10px 12px;
+      border-radius: 10px;
+    }
+    .warning b{color:#d80018}
+
+    .pamphlet__foot{
+      margin-top: 18px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(0,0,0,.15);
+      display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+      font-size: 12px;
+      color: rgba(0,0,0,.55);
+      letter-spacing:.06em;
+    }
+
+    /* smaller on short viewports */
+    @media (max-height:760px){
+      .wrap{padding-top:78px}
+      .h1p{font-size: 30px}
+      .sec__num{font-size: 46px}
+    }
+  </style>
 </head>
 <body>
+  <!-- FX overlays (same as other pages) -->
   <div class="fx fx-hex" aria-hidden="true"></div>
   <div class="fx fx-scan" aria-hidden="true"></div>
   <div class="fx fx-noise" aria-hidden="true"></div>
 
   <header class="topbar">
     <div class="topbar__left">
-      <a class="chip chip--link" href="index.html">← HOME</a>
-      <span class="chip">MODE: <b>VISITOR</b></span>
-      <span class="chip">ACCESS: <b class="ok">PUBLIC</b></span>
+      <span class="chip chip--alert">PUBLIC</span>
+      <span class="chip">DOC: <b>VISITOR GUIDE</b></span>
+      <span class="chip">LEVEL: <b class="warn">A/B</b></span>
     </div>
     <div class="topbar__right">
+      <a class="chip chip--link" href="index.html" data-sfx="tap">BACK</a>
       <span class="chip mono" id="clock">--:--:--</span>
     </div>
   </header>
 
-  <main class="wrap">
-    <section class="panel prose">
-      <div class="panel__head">
-        <h1 class="h2">VISITOR PORTAL</h1>
-        <p class="sub">NERV施設への来訪者向け案内。受付手順と安全ルールを確認せよ。</p>
-      </div>
-
-      <h3>受付フロー</h3>
-      <ol>
-        <li><b>受付</b>：来訪目的・氏名・所属を提示（身分証の提示が必要）</li>
-        <li><b>入館証</b>：ゲストパスを受領し、常時見える位置へ装着</li>
-        <li><b>同行</b>：許可区域外は、担当者の同行が必須</li>
-        <li><b>退館</b>：返却手続き（パス／貸与物）を実施</li>
-      </ol>
-
-      <h3>安全ルール</h3>
-      <ul>
-        <li>撮影・録音：許可区域のみ（掲示に従う）</li>
-        <li>設備・配線：触れない（操作は担当者のみ）</li>
-        <li>警報・避難誘導：指示に従い、階段で移動</li>
-      </ul>
-
-      <div class="divider"></div>
-
-      <div class="row">
-        <div class="note">
-          <div class="note__title mono">ACCESS LEVEL</div>
-          <div class="note__body">
-            <span class="ok">PUBLIC</span>：受付〜待機エリア<br>
-            <span class="warn">ESCORT</span>：同行必須（デモ区画）<br>
-            <span class="muted">RESTRICTED</span>：立入不可
+  <main class="wrap wrap--wide">
+    <section class="panel pamphlet">
+      <div class="pamphlet__paper">
+        <div class="pamphlet__top">
+          <div class="meta">
+            <span class="tag tag--red"><b>NERV</b> HQ</span>
+            <span class="tag">VISIT / ORIENTATION</span>
+            <span class="tag">DOC-ID: EU-01</span>
+          </div>
+          <div class="meta">
+            <a class="btn small" href="stage-route-map.html" data-sfx="tap">ENTER CONSOLE</a>
           </div>
         </div>
-        <div class="note">
-          <div class="note__title mono">CONTACT</div>
-          <div class="note__body">
-            Operations Desk / Internal Line: <span class="mono">#041</span><br>
-            Visitor Support: <span class="mono">#012</span>
+
+        <div class="pamphlet__body">
+          <div class="cover">
+            <div class="cover__img">
+              <img src="assets/nerv-welcome.png" alt="ようこそNERVへ" />
+            </div>
+            <div class="cover__right">
+              <h1 class="h1p"><span class="red">NERV</span> VISITORS</h1>
+              <p class="lead">
+                ここは来訪者向けの案内ページです。施設内の移動・撮影・情報の扱いは、すべて本書の規定に従ってください。
+                不明点がある場合は、必ず担当官（Liaison）に確認してください。
+              </p>
+              <div class="stamp">TOP SECRET</div>
+              <div class="toc" aria-label="目次">
+                <a href="#s1"><span>01. 基本案内</span><span class="p">P.01</span></a>
+                <a href="#s2"><span>02. 施設利用とセキュリティ</span><span class="p">P.02</span></a>
+                <a href="#s3"><span>03. MAGI端末の取り扱い</span><span class="p">P.03</span></a>
+                <a href="#s4"><span>04. 緊急時プロトコル</span><span class="p">P.04</span></a>
+              </div>
+            </div>
+          </div>
+
+          <section class="sec" id="s1">
+            <div class="sec__head">
+              <div class="sec__num">01</div>
+              <h2 class="sec__title">基本案内</h2>
+            </div>
+            <p class="p">
+              本施設は国連直轄の特務機関であり、すべての来訪は事前承認制です。訪問中はIDを常に携行し、
+              認証ゲート・警備員の指示に従ってください。
+            </p>
+            <div class="grid2">
+              <div class="box">
+                <div class="box__k">CHECK-IN</div>
+                <div class="box__t">受付（LIAISON）</div>
+                <p class="p">入館証の受領 → エリア説明 → 訪問範囲の確定（Level A/B）。</p>
+              </div>
+              <div class="box">
+                <div class="box__k">RESTRICTIONS</div>
+                <div class="box__t">撮影・記録</div>
+                <p class="p">許可のない撮影／録音／端末画面の記録は禁止。機密媒体の持ち出し禁止。</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="sec" id="s2">
+            <div class="sec__head">
+              <div class="sec__num">02</div>
+              <h2 class="sec__title">施設利用とセキュリティ</h2>
+            </div>
+            <p class="p">アクセスはIDレベルで制御されます。来訪者は通常 Level A/B の範囲に限定されます。</p>
+            <div class="box" style="margin-top:12px">
+              <div class="box__k">SECURITY LEVELS</div>
+              <div class="levels">
+                <div class="lv"><div class="badge bA">A</div><span>一般来訪者エリア（受付・見学導線）</span></div>
+                <div class="lv"><div class="badge bB">B</div><span>管理部門エリア（監督下での移動）</span></div>
+                <div class="lv"><div class="badge bC">C</div><span>技術区画（要生体認証・原則立入不可）</span></div>
+                <div class="lv"><div class="badge bD">D</div><span>作戦区画（原則立入不可）</span></div>
+                <div class="lv"><div class="badge bEEE">EEE</div><span>最重要機密区域（無断侵入は即時排除）</span></div>
+              </div>
+            </div>
+            <div class="warning">
+              <div><b>重要警告</b></div>
+              <div class="p" style="margin:0">
+                無断侵入・機密情報の持ち出しは、理由の如何を問わず厳正に対処されます。
+                迷った場合はその場で停止し、担当官へ連絡してください。
+              </div>
+            </div>
+          </section>
+
+          <section class="sec" id="s3">
+            <div class="sec__head">
+              <div class="sec__num">03</div>
+              <h2 class="sec__title">MAGI端末の取り扱い</h2>
+            </div>
+            <p class="p">
+              端末への接触・操作は、担当官の許可がある場合に限ります。画面の撮影・複写は禁止。操作ログは自動記録されます。
+            </p>
+            <div class="grid2">
+              <div class="box">
+                <div class="box__k">ACCESS</div>
+                <div class="box__t">許可制</div>
+                <p class="p">IDと生体認証（必要な場合）によるアクセス制御。権限外操作は即時遮断。</p>
+              </div>
+              <div class="box">
+                <div class="box__k">LOG</div>
+                <div class="box__t">監査</div>
+                <p class="p">操作履歴・画面遷移・入力は監査対象。疑義がある場合は記録照合。</p>
+              </div>
+            </div>
+          </section>
+
+          <section class="sec" id="s4">
+            <div class="sec__head">
+              <div class="sec__num">04</div>
+              <h2 class="sec__title">緊急時プロトコル</h2>
+            </div>
+            <p class="p">警報発令時は、指示に従い最寄りのシェルターへ退避してください。誘導がない場合は担当官を探さず、その場で待機。</p>
+            <div class="grid2">
+              <div class="box">
+                <div class="box__k">EVACUATION</div>
+                <div class="box__t">退避</div>
+                <p class="p">「退避不可」表示区画には絶対に立ち入らないこと。</p>
+              </div>
+              <div class="box">
+                <div class="box__k">CONTACT</div>
+                <div class="box__t">連絡</div>
+                <p class="p">担当官（LIAISON）／警備（SECURITY）／医療（MED）へ順に報告。</p>
+              </div>
+            </div>
+          </section>
+
+          <div class="pamphlet__foot">
+            <span class="mono">PROPERTY OF NERV. UNAUTHORIZED REPRODUCTION PROHIBITED.</span>
+            <span class="mono">© tomoponz / visitor guide</span>
           </div>
         </div>
       </div>
-
-      <div class="divider"></div>
-
-      <div class="btnrow">
-        <a class="btn primary" href="stage-route-map.html">OPEN DEMO CONSOLE</a>
-        <a class="btn" href="files.html">OPEN FILES</a>
-      </div>
-
-      <p class="mono muted" style="margin-top:12px">NOTE: This is a fictional UI for a creative web project.</p>
     </section>
-
-    <footer class="footer">
-      <span class="mono">VISITOR END</span>
-    </footer>
   </main>
 </body>
 </html>
