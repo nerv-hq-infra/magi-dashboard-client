@@ -3,7 +3,6 @@
   - clock
   - boot sequence (index)
   - toast
-  - panic overlay
   - Files list filtering
   - Terminal command parser
 */
@@ -244,9 +243,10 @@
           "about":"about.html",
           "visitors":"visitor.html",
           "visitor":"visitor.html",
-          "console":"stage-route-map.html",
-          "route":"stage-route-map.html",
-          "stage":"stage-layer-map.html",
+          "cam":"angel-cam.html",
+          "camera":"angel-cam.html",
+          "live":"angel-cam.html",
+          "stage":"stage-route-map.html",
         };
         const to = map[k];
         if(!to){
