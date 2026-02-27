@@ -81,6 +81,7 @@
 
     .frame{
       position:relative;
+      width: 1680px; /* baseline size for full-screen fit */
       border:2px solid var(--line);
       background: linear-gradient(180deg, rgba(255,177,74,.028), transparent 40%), var(--panel);
       box-shadow: 0 26px 100px rgba(0,0,0,.58);
@@ -690,7 +691,17 @@
       user-select:none;
       white-space:nowrap;
     }
-    .restartBtn:disabled{
+    
+    .restartBtn.mini{
+      padding: 4px 10px;
+      font-size: 11px;
+      letter-spacing:.08em;
+    }
+    .restartBtn.mini:disabled{
+      opacity:.55;
+      pointer-events:none;
+    }
+.restartBtn:disabled{
       opacity:.55;
       cursor:default;
       border-color: rgba(255,177,74,.28);
@@ -1012,7 +1023,10 @@
         <div class="barsWrap">
           <div class="barsHeader">
             <span>Current Target Cylinders</span>
-            <span id="ukm">UKM-v7.0.8</span>
+            <span class="barsRight">
+              <span id="ukm">UKM-v7.0.8</span>
+              <button class="restartBtn mini" id="restartBtnMini" type="button">RESTART DECRYPTION</button>
+            </span>
           </div>
           <button class="restartBtn big" id="restartBtn" type="button">RESTART DECRYPTION</button>
           <div class="bars" id="bars"></div>
@@ -1099,12 +1113,12 @@
     function fitConsole(){
       const frame = document.querySelector(".frame");
       if(!frame) return;
-      const margin = 18; // keep a little breathing room
+      const margin = 6; // minimal breathing room (aim: edge-to-edge)
       const w = frame.offsetWidth;
       const h = frame.offsetHeight;
       const sx = (window.innerWidth - margin*2) / w;
       const sy = (window.innerHeight - margin*2) / h;
-      const sc = Math.max(0.35, Math.min(1, sx, sy));
+      const sc = Math.max(0.35, Math.min(2.6, sx, sy));
       document.documentElement.style.setProperty("--uiScale", sc.toFixed(3));
     }
     window.addEventListener("resize", fitConsole, {passive:true});
@@ -1357,7 +1371,10 @@
         $("statusRight").style.borderColor = "rgba(57,255,122,.55)";
         $("statusRight").style.color = "var(--green)";
       }
-      beep(1320, 70, "square", 0.03);
+            // allow replay from header button
+      setRestartMini(true);
+      setRestartBig(false);
+beep(1320, 70, "square", 0.03);
       setTimeout(()=>beep(1760, 80, "square", 0.03), 90);
     }
 
@@ -1444,11 +1461,19 @@
 
     // ========= init =========
     makeBars();
+    // quick-start: click cylinder area to begin (if not active)
+    bars?.addEventListener("click", ()=>{
+      if(puzzleActive) return;
+      if(sessionStorage.getItem(KEY_SOLVED)==="1") return; // use header restart to replay
+      startPuzzle();
+    });
+
     applyConfig(readQuery());
     ["bits1","bits2","bits3","bits4"].forEach(fillBits);
 
     // base percent like reference
     setPct(BASE_PCT);
+
 
     $("apply").addEventListener("click", ()=>{
       applyConfig(currentCfg());
@@ -1464,23 +1489,65 @@
       o.setAttribute("aria-hidden","true");
     });
 
-    // restart button -> start puzzle
-    const restartBtn = $("restartBtn");
-    if(restartBtn){
-      restartBtn.addEventListener("click", ()=>{
-        if(puzzleActive) return;
-        restartBtn.disabled = true;
-        enablePuzzle();
+    // restart button -> start puzzle / replay
+    const restartBtn = $("restartBtn");      // big (center)
+    const restartBtnMini = $("restartBtnMini"); // header (always visible)
 
-        // debug flag auto-solve
-        if(sessionStorage.getItem(KEY_DEBUG_SOLVE) === "1"){
-          sessionStorage.removeItem(KEY_DEBUG_SOLVE);
-          setTimeout(()=>solvePuzzle(), 220);
-        }
-      });
+    function setRestartBig(on){
+      if(!restartBtn) return;
+      restartBtn.disabled = !on;
+    }
+    function setRestartMini(on){
+      if(!restartBtnMini) return;
+      restartBtnMini.disabled = !on;
+    }
+    function setStatusLocked(){
+      const sr = $("statusRight");
+      if(!sr) return;
+      sr.textContent = "AI SYSTEMS: LOCKED";
+      sr.style.borderColor = "rgba(255,177,74,.38)";
+      sr.style.color = "var(--amber)";
+    }
+    function hideUnlocked(){
+      const o = $("unlockOverlay");
+      if(o){
+        o.classList.remove("on");
+        o.setAttribute("aria-hidden","true");
+      }
     }
 
-    // Konami debug: ↑↑↓↓←→←→ba
+    function startPuzzle(){
+      if(puzzleActive) return;
+
+      // If previously solved, allow replay: reset UI + flag
+      if(sessionStorage.getItem(KEY_SOLVED) === "1"){
+        hideUnlocked();
+        sessionStorage.removeItem(KEY_SOLVED);
+        setPct(BASE_PCT);
+        setStatusLocked();
+      }
+
+      // Disable both while decrypting
+      setRestartBig(false);
+      setRestartMini(false);
+
+      enablePuzzle();
+
+      // debug flag auto-solve
+      if(sessionStorage.getItem(KEY_DEBUG_SOLVE) === "1"){
+        sessionStorage.removeItem(KEY_DEBUG_SOLVE);
+        setTimeout(()=>solvePuzzle(), 220);
+      }
+    }
+
+    if(restartBtn){
+      restartBtn.addEventListener("click", startPuzzle);
+    }
+    if(restartBtnMini){
+      restartBtnMini.addEventListener("click", startPuzzle);
+    }
+
+// Konami debug: ↑↑↓↓←→←→ba
     const KONAMI = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
     const buf = [];
     window.addEventListener("keydown", (e)=>{
@@ -1521,7 +1588,8 @@
     } else {
       document.body.classList.remove("cinematic");
       if(solved){
-        if(restartBtn) restartBtn.disabled = true;
+        setRestartBig(false);
+        setRestartMini(true);
         setPct(100);
         if($("statusRight")){
           $("statusRight").textContent = "AI SYSTEMS: UNLOCKED";
