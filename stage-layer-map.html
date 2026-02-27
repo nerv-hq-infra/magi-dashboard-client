@@ -117,6 +117,7 @@
       padding: 2px 4px 10px;
       opacity:.95;
     }
+    .topbar a.chip{ color: inherit; text-decoration:none; }
     .topbar .right{display:flex; gap:8px; align-items:center}
     .chip{
       border:1px solid var(--line);
@@ -127,6 +128,8 @@
       letter-spacing:.06em;
       user-select:none;
     }
+    .chip--link{cursor:pointer}
+    .chip--link:hover{background: rgba(255,177,74,.10)}
 
     .headline{
       display:flex;
@@ -740,6 +743,8 @@
     
     .clusterUnder{
       margin-top: 8px;
+      margin-left: 8px;
+      margin-right: 8px;
       display:grid;
       grid-template-columns: repeat(4, 1fr);
       border-top: 1px solid var(--line2);
@@ -896,8 +901,8 @@
       <div class="topbar">
         <div id="topbarLeft">AM-4 / SHADING CONTROL / SEALING PILLAR</div>
         <div class="right">
-          <span class="chip" id="chipLink">LINK</span>
-          <span class="chip">QUIT</span>
+          <a class="chip chip--link" id="chipLink" href="stage-route-map.html">LINK</a>
+          <a class="chip chip--link" id="quitBtn" href="index.html">QUIT</a>
         </div>
       </div>
 
@@ -1177,7 +1182,20 @@
     const KEY_CINE = "MAGI_STAGE_CINEMATIC";
     const KEY_SOLVED = "MAGI_STAGE_SOLVED";
     const KEY_DEBUG_SOLVE = "MAGI_DEBUG_SOLVE";
+    const KEY_UNLOCK = "MAGI_STAGE_UNLOCK";
     const BASE_PCT = 37;
+
+    // ========= access gate (route-map required) =========
+    // Allow direct open with ?direct=1 (useful for design/debug)
+    try{
+      const spGate = new URLSearchParams(location.search);
+      const direct = spGate.get("direct") === "1";
+      const unlocked = sessionStorage.getItem(KEY_UNLOCK) === "1";
+      if(!direct && !unlocked){
+        const here = (location.pathname.split("/").pop() || "stage-layer-map.html") + (location.search || "");
+        location.replace(`stage-route-map.html?next=${encodeURIComponent(here)}`);
+      }
+    }catch(_){/* ignore */}
 
     // puzzle state (cylinders) is declared below
 

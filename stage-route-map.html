@@ -804,7 +804,13 @@
       routeIn.addEventListener("keydown", (e) => {
         if(e.key === "Enter"){
           e.preventDefault();
-          grantAccess();
+          // Prevent bypass: only allow when target is reached.
+          if(goBtn && !goBtn.disabled){
+            grantAccess();
+          } else {
+            beep(240, 110, "sawtooth", 0.02);
+            setHint("TARGET未到達。分岐に沿って末端（STAGE）まで入力");
+          }
         }
       });
       resetBtn.addEventListener("click", () => {

@@ -16,7 +16,7 @@
 
   <header class="topbar">
     <div class="topbar__left">
-      <span class="chip chip--alert">ALERT</span>
+      <span class="chip">OPERATION: <b class="ok">NORMAL</b></span>
       <span class="chip">SECTOR: <b id="sector">A-03</b></span>
       <span class="chip">LINK: <b class="ok">OK</b></span>
     </div>
@@ -64,12 +64,6 @@
             <div class="card__title">ABOUT</div>
             <div class="card__desc">このサイトの設計・注意</div>
           </a>
-
-          <button class="card card--btn" id="panic" type="button">
-            <div class="card__kicker mono">EMERGENCY</div>
-            <div class="card__title">PANIC</div>
-            <div class="card__desc">警告演出（オーバーレイ）</div>
-          </button>
         </div>
 
         <div class="divider"></div>
@@ -81,7 +75,7 @@
           </div>
           <div class="note">
             <div class="note__title mono">STATUS</div>
-            <div class="note__body"><span class="ok">SYSTEM ONLINE</span> / <span class="warn">WARNING LEVEL: 1</span></div>
+            <div class="note__body"><span class="ok">SYSTEM ONLINE</span> / <span class="mono">MODE: NORMAL</span></div>
           </div>
         </div>
       </div>
@@ -92,16 +86,5 @@
     </footer>
   </main>
 
-  <!-- Panic overlay -->
-  <div class="overlay" id="overlay" hidden>
-    <div class="overlay__panel panel">
-      <div class="overlay__title mono">WARNING</div>
-      <p class="overlay__text">システムは異常を検知した。落ち着け。呼吸しろ。次の手を選べ。</p>
-      <div class="btnrow">
-        <button class="btn primary" id="closeOverlay" type="button">ACK</button>
-        <a class="btn" href="terminal.html">OPEN TERMINAL</a>
-      </div>
-    </div>
-  </div>
 </body>
 </html>

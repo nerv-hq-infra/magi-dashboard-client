@@ -242,6 +242,11 @@
           "files":"files.html",
           "archive":"files.html",
           "about":"about.html",
+          "visitors":"visitor.html",
+          "visitor":"visitor.html",
+          "console":"stage-route-map.html",
+          "route":"stage-route-map.html",
+          "stage":"stage-layer-map.html",
         };
         const to = map[k];
         if(!to){
