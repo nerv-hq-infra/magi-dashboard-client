@@ -81,7 +81,6 @@
 
     .frame{
       position:relative;
-      width: 1680px; /* baseline size for full-screen fit */
       border:2px solid var(--line);
       background: linear-gradient(180deg, rgba(255,177,74,.028), transparent 40%), var(--panel);
       box-shadow: 0 26px 100px rgba(0,0,0,.58);
@@ -282,7 +281,7 @@
     }
     .radarShell{
       position:relative;
-      width: min(620px, 100%);
+      width: min(920px, 100%);
       aspect-ratio: 1/1;
       margin: 6px auto 0;
     }
@@ -558,6 +557,8 @@
     .cyl .whisker.top{ top: 16px; }
     .cyl .whisker.bottom{ bottom: 16px; }
     .cyl .box{
+      cursor: ns-resize;
+      touch-action:none;
       position:absolute;
       left: 16%;
       right: 16%;
@@ -691,17 +692,7 @@
       user-select:none;
       white-space:nowrap;
     }
-    
-    .restartBtn.mini{
-      padding: 4px 10px;
-      font-size: 11px;
-      letter-spacing:.08em;
-    }
-    .restartBtn.mini:disabled{
-      opacity:.55;
-      pointer-events:none;
-    }
-.restartBtn:disabled{
+    .restartBtn:disabled{
       opacity:.55;
       cursor:default;
       border-color: rgba(255,177,74,.28);
@@ -1023,10 +1014,7 @@
         <div class="barsWrap">
           <div class="barsHeader">
             <span>Current Target Cylinders</span>
-            <span class="barsRight">
-              <span id="ukm">UKM-v7.0.8</span>
-              <button class="restartBtn mini" id="restartBtnMini" type="button">RESTART DECRYPTION</button>
-            </span>
+            <span id="ukm">UKM-v7.0.8</span>
           </div>
           <button class="restartBtn big" id="restartBtn" type="button">RESTART DECRYPTION</button>
           <div class="bars" id="bars"></div>
@@ -1113,12 +1101,12 @@
     function fitConsole(){
       const frame = document.querySelector(".frame");
       if(!frame) return;
-      const margin = 6; // minimal breathing room (aim: edge-to-edge)
+      const margin = 0; // edge-to-edge
       const w = frame.offsetWidth;
       const h = frame.offsetHeight;
       const sx = (window.innerWidth - margin*2) / w;
       const sy = (window.innerHeight - margin*2) / h;
-      const sc = Math.max(0.35, Math.min(2.6, sx, sy));
+      const sc = Math.max(0.35, Math.min(3.0, sx, sy));
       document.documentElement.style.setProperty("--uiScale", sc.toFixed(3));
     }
     window.addEventListener("resize", fitConsole, {passive:true});
@@ -1152,20 +1140,23 @@
 
 
     const cylEls = [];
+    const boxEls = [];
     const slotEls = [];
-    const MIN_Y = -42;
-    const MAX_Y = 42;
-    const SNAP_PX = 5;
 
-    let targetsY = new Array(N).fill(0);
-    let posY = new Array(N).fill(0);
+    // Move ONLY the box (not the whole cylinder)
+    const BOX_STEPS = [34, 52, 70, 88, 106, 124, 142, 156];
+    const MIN_BOX = BOX_STEPS[0];
+    const MAX_BOX = BOX_STEPS[BOX_STEPS.length-1];
+
+    let targetsBox = new Array(N).fill(0);
+    let boxPos = new Array(N).fill(0);
     let locked = new Array(N).fill(false);
     let activeIndex = 0;
     let puzzleActive = false;
 
-    function nearestStepY(y){
-      let best = STEPSY[0], bestD = 1e9;
-      for(const s of STEPSY){
+    function nearestStepBox(y){
+      let best = BOX_STEPS[0], bestD = 1e9;
+      for(const s of BOX_STEPS){
         const d = Math.abs(s - y);
         if(d < bestD){ bestD = d; best = s; }
       }
@@ -1176,11 +1167,13 @@
       if(!bars) return;
       bars.innerHTML = "";
       cylEls.length = 0;
+      boxEls.length = 0;
       slotEls.length = 0;
 
       for(let i=0;i<N;i++){
         const slot = document.createElement("div");
         slot.className = "slot";
+
         const cyl = document.createElement("div");
         cyl.className = "cyl" + (Math.random()<0.30 ? " dim" : "");
         cyl.dataset.i = String(i);
@@ -1192,8 +1185,11 @@
         wTop.className = "whisker top";
         const wBot = document.createElement("i");
         wBot.className = "whisker bottom";
+
         const box = document.createElement("i");
         box.className = "box";
+        box.dataset.i = String(i);
+
         const tick = document.createElement("div");
         tick.className = "tick";
         for(let t=0;t<4;t++){ tick.appendChild(document.createElement("i")); }
@@ -1204,14 +1200,15 @@
         cyl.appendChild(box);
         cyl.appendChild(tick);
 
-        // visual variation (box position)
-        cyl.style.setProperty("--boxY", rnd(34, 156) + "px");
+        // initial visual placement
+        cyl.style.setProperty("--boxY", BOX_STEPS[rnd(0, BOX_STEPS.length-1)] + "px");
 
         slot.appendChild(cyl);
         bars.appendChild(slot);
 
         slotEls.push(slot);
         cylEls.push(cyl);
+        boxEls.push(box);
       }
     }
 
@@ -1253,21 +1250,23 @@
         if(c>=N){
           $("statusRight").style.borderColor = "rgba(57,255,122,.55)";
           $("statusRight").style.color = "var(--green)";
+        } else {
+          $("statusRight").style.borderColor = "rgba(255,177,74,.38)";
+          $("statusRight").style.color = "var(--amber)";
         }
       }
       setPuzzleHud();
     }
 
-    function applyPos(i){
-      const el = cylEls[i];
-      el.style.transform = `translateY(${posY[i]}px)`;
+    function applyBox(i){
+      cylEls[i].style.setProperty("--boxY", boxPos[i] + "px");
     }
 
     function lockCyl(i){
       if(locked[i]) return;
       locked[i] = true;
-      posY[i] = targetsY[i];
-      applyPos(i);
+      boxPos[i] = targetsBox[i];
+      applyBox(i);
 
       const el = cylEls[i];
       el.classList.add("locked");
@@ -1288,77 +1287,87 @@
     }
 
     function enablePuzzle(){
-      // choose target offsets
-      targetsY = targetsY.map(()=> STEPSY[rnd(0, STEPSY.length-1)]);
+      // choose target box positions
+      targetsBox = targetsBox.map(()=> BOX_STEPS[rnd(0, BOX_STEPS.length-1)]);
       locked = new Array(N).fill(false);
 
       for(let i=0;i<N;i++){
-        let y = STEPSY[rnd(0, STEPSY.length-1)];
-        if(y === targetsY[i] && Math.random() < 0.75){
-          y = STEPSY[(STEPSY.indexOf(y)+rnd(1, STEPSY.length-1)) % STEPSY.length];
+        let y = BOX_STEPS[rnd(0, BOX_STEPS.length-1)];
+        if(y === targetsBox[i] && Math.random() < 0.75){
+          y = BOX_STEPS[(BOX_STEPS.indexOf(y) + rnd(1, BOX_STEPS.length-1)) % BOX_STEPS.length];
         }
-        posY[i] = y;
+        boxPos[i] = y;
         const el = cylEls[i];
         el.classList.remove("locked","active");
-        applyPos(i);
+        applyBox(i);
       }
 
       puzzleActive = true;
       setActive(0);
       updateProgress();
 
-      // drag logic (active cyl only)
+      // drag logic (active box only)
       let drag = null; // {i, startY, startPos}
+
       function onDown(e){
         if(!puzzleActive) return;
         const i = parseInt(this.dataset.i || "-1", 10);
         if(i !== activeIndex) return;
         if(locked[i]) return;
 
-        drag = {i, startY: e.clientY, startPos: posY[i]};
+        drag = {i, startY: e.clientY, startPos: boxPos[i]};
         this.setPointerCapture?.(e.pointerId);
         beep(660, 30, "square", 0.02);
         e.preventDefault();
       }
+
       function onMove(e){
         if(!drag) return;
         const i = drag.i;
         const dy = (e.clientY - drag.startY);
-        posY[i] = clamp(drag.startPos + dy, MIN_Y, MAX_Y);
-        applyPos(i);
+        boxPos[i] = clamp(drag.startPos + dy, MIN_BOX, MAX_BOX);
+        applyBox(i);
       }
+
       function onUp(e){
         if(!drag) return;
         const i = drag.i;
-        const snap = nearestStepY(posY[i]);
-        posY[i] = snap;
-        applyPos(i);
+        const snap = nearestStepBox(boxPos[i]);
+        boxPos[i] = snap;
+        applyBox(i);
         drag = null;
 
-        if(snap === targetsY[i]){
+        if(snap == targetsBox[i]){
           lockCyl(i);
         } else {
           beep(220, 80, "sawtooth", 0.02);
         }
       }
 
-      for(const el of cylEls){
-        el.onpointerdown = onDown;
-        el.onpointermove = onMove;
-        el.onpointerup = onUp;
-        el.onpointercancel = onUp;
+      for(const box of boxEls){
+        box.onpointerdown = onDown;
+        box.onpointermove = onMove;
+        box.onpointerup = onUp;
+        box.onpointercancel = onUp;
       }
     }
 
     function solvePuzzle(){
       if(!puzzleActive) return;
+      // hard solve (debug)
       for(let i=0;i<N;i++){
-        if(locked[i]) continue;
-        posY[i] = targetsY[i];
-        applyPos(i);
-        lockCyl(i);
+        locked[i] = true;
+        boxPos[i] = targetsBox[i];
+        applyBox(i);
+        cylEls[i].classList.add("locked");
+        cylEls[i].classList.remove("active");
       }
+      puzzleActive = false;
+      updateProgress();
+      sessionStorage.setItem(KEY_SOLVED, "1");
+      showUnlocked();
     }
+
     function showUnlocked(){
       const o = $("unlockOverlay");
       if(o){
@@ -1371,10 +1380,7 @@
         $("statusRight").style.borderColor = "rgba(57,255,122,.55)";
         $("statusRight").style.color = "var(--green)";
       }
-            // allow replay from header button
-      setRestartMini(true);
-      setRestartBig(false);
-beep(1320, 70, "square", 0.03);
+      beep(1320, 70, "square", 0.03);
       setTimeout(()=>beep(1760, 80, "square", 0.03), 90);
     }
 
@@ -1461,19 +1467,11 @@ beep(1320, 70, "square", 0.03);
 
     // ========= init =========
     makeBars();
-    // quick-start: click cylinder area to begin (if not active)
-    bars?.addEventListener("click", ()=>{
-      if(puzzleActive) return;
-      if(sessionStorage.getItem(KEY_SOLVED)==="1") return; // use header restart to replay
-      startPuzzle();
-    });
-
     applyConfig(readQuery());
     ["bits1","bits2","bits3","bits4"].forEach(fillBits);
 
     // base percent like reference
     setPct(BASE_PCT);
-
 
     $("apply").addEventListener("click", ()=>{
       applyConfig(currentCfg());
@@ -1489,65 +1487,23 @@ beep(1320, 70, "square", 0.03);
       o.setAttribute("aria-hidden","true");
     });
 
-    // restart button -> start puzzle / replay
-    const restartBtn = $("restartBtn");      // big (center)
-    const restartBtnMini = $("restartBtnMini"); // header (always visible)
-
-    function setRestartBig(on){
-      if(!restartBtn) return;
-      restartBtn.disabled = !on;
-    }
-    function setRestartMini(on){
-      if(!restartBtnMini) return;
-      restartBtnMini.disabled = !on;
-    }
-    function setStatusLocked(){
-      const sr = $("statusRight");
-      if(!sr) return;
-      sr.textContent = "AI SYSTEMS: LOCKED";
-      sr.style.borderColor = "rgba(255,177,74,.38)";
-      sr.style.color = "var(--amber)";
-    }
-    function hideUnlocked(){
-      const o = $("unlockOverlay");
-      if(o){
-        o.classList.remove("on");
-        o.setAttribute("aria-hidden","true");
-      }
-    }
-
-    function startPuzzle(){
-      if(puzzleActive) return;
-
-      // If previously solved, allow replay: reset UI + flag
-      if(sessionStorage.getItem(KEY_SOLVED) === "1"){
-        hideUnlocked();
-        sessionStorage.removeItem(KEY_SOLVED);
-        setPct(BASE_PCT);
-        setStatusLocked();
-      }
-
-      // Disable both while decrypting
-      setRestartBig(false);
-      setRestartMini(false);
-
-      enablePuzzle();
-
-      // debug flag auto-solve
-      if(sessionStorage.getItem(KEY_DEBUG_SOLVE) === "1"){
-        sessionStorage.removeItem(KEY_DEBUG_SOLVE);
-        setTimeout(()=>solvePuzzle(), 220);
-      }
-    }
-
+    // restart button -> start puzzle
+    const restartBtn = $("restartBtn");
     if(restartBtn){
-      restartBtn.addEventListener("click", startPuzzle);
-    }
-    if(restartBtnMini){
-      restartBtnMini.addEventListener("click", startPuzzle);
+      restartBtn.addEventListener("click", ()=>{
+        if(puzzleActive) return;
+        restartBtn.disabled = true;
+        enablePuzzle();
+
+        // debug flag auto-solve
+        if(sessionStorage.getItem(KEY_DEBUG_SOLVE) === "1"){
+          sessionStorage.removeItem(KEY_DEBUG_SOLVE);
+          setTimeout(()=>solvePuzzle(), 220);
+        }
+      });
     }
 
-// Konami debug: ↑↑↓↓←→←→ba
+    // Konami debug: ↑↑↓↓←→←→ba
     const KONAMI = ["ArrowUp","ArrowUp","ArrowDown","ArrowDown","ArrowLeft","ArrowRight","ArrowLeft","ArrowRight","b","a"];
     const buf = [];
     window.addEventListener("keydown", (e)=>{
@@ -1561,7 +1517,7 @@ beep(1320, 70, "square", 0.03);
       while(buf.length > KONAMI.length) buf.shift();
       const ok = KONAMI.every((v,idx)=>buf[idx]===v);
       if(ok){
-        if(puzzleActive && sessionStorage.getItem(KEY_SOLVED) !== "1"){
+        if(puzzleActive){
           solvePuzzle();
         } else {
           sessionStorage.setItem(KEY_DEBUG_SOLVE, "1");
@@ -1588,8 +1544,6 @@ beep(1320, 70, "square", 0.03);
     } else {
       document.body.classList.remove("cinematic");
       if(solved){
-        setRestartBig(false);
-        setRestartMini(true);
         setPct(100);
         if($("statusRight")){
           $("statusRight").textContent = "AI SYSTEMS: UNLOCKED";
