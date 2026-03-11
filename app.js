@@ -47,6 +47,34 @@
       .replaceAll("'","&#39;");
   }
 
+  // ====== theme persistence ======
+  function setTheme(mode){
+    const root = document.documentElement;
+    if(mode === "ok"){
+      root.setAttribute("data-accent","ok");
+      root.style.setProperty("--alert", "#2bff9a");
+      root.style.setProperty("--warn", "#7cc3ff");
+    } else {
+      root.setAttribute("data-accent","alert");
+      root.style.setProperty("--alert", "#ff2a2a");
+      root.style.setProperty("--warn", "#ff7a18");
+    }
+    try{ localStorage.setItem("termui_theme", mode); }catch(_){/* ignore */}
+  }
+
+  function toggleTheme(){
+    const mode = document.documentElement.getAttribute("data-accent") || "alert";
+    setTheme(mode === "alert" ? "ok" : "alert");
+  }
+
+  function applyStoredTheme(){
+    try{
+      const mode = localStorage.getItem("termui_theme");
+      if(mode === "ok" || mode === "alert") setTheme(mode);
+    }catch(_){/* ignore */}
+  }
+  applyStoredTheme();
+
   // ====== tiny SFX (no external files) ======
   // You can replace this with actual audio files later.
   function beep(freq=740, ms=70, type="square", vol=0.05){
@@ -102,10 +130,16 @@
   function showMenu(){
     if(menu) menu.hidden = false;
     if(boot) boot.hidden = true;
+    try{ localStorage.setItem("termui_boot_seen", "1"); }catch(_){/* ignore */}
     toast("SYSTEM", "オンライン。メニューを選択せよ。");
   }
 
   if(boot && bootLines && menu){
+    const bootSeen = (() => {
+      try{ return localStorage.getItem("termui_boot_seen") === "1"; }
+      catch(_){ return false; }
+    })();
+
     let i = 0;
     const step = () => {
       if(i === 0) beep(520, 60, "square", 0.03);
@@ -118,7 +152,13 @@
         setTimeout(showMenu, 420);
       }
     };
-    step();
+
+    if(bootSeen){
+      bootLines.textContent = "[SYS] cached boot / skipping sequence";
+      showMenu();
+    } else {
+      step();
+    }
 
     skipBoot?.addEventListener("click", () => {
       beep(1200, 40, "square", 0.03);
@@ -128,9 +168,13 @@
 
   // ====== FILES page ======
   const FILES_DB = [
-    { id:"log-0001", type:"log",  title:"起動ログ / 設計ルール", tag:["ui","spec"], date:"2026-02-26", href:"about.html" },
-    { id:"work-0001", type:"work", title:"作品ログ（例）",           tag:["work"],     date:"2026-02-26", href:"#" },
-    { id:"link-0001", type:"link", title:"外部リンク（例）",         tag:["link"],     date:"2026-02-26", href:"#" },
+    { id:"log-0001", type:"log",  title:"設計方針 / ABOUT",               tag:["spec","ui","policy"],       date:"2026-03-11", href:"about.html" },
+    { id:"log-0002", type:"log",  title:"来訪者ガイド / VISITORS",        tag:["visitor","public","guide"],  date:"2026-03-11", href:"visitor.html" },
+    { id:"work-0001", type:"work", title:"Route Map / 分岐ブロックゲート", tag:["route","puzzle","access"],   date:"2026-03-11", href:"stage-route-map.html" },
+    { id:"work-0002", type:"work", title:"Sealing Pillar Console",        tag:["console","decrypt","stage"], date:"2026-03-11", href:"stage-layer-map.html" },
+    { id:"work-0003", type:"work", title:"Surface Live Cam",              tag:["cam","surveillance","hud"],  date:"2026-03-11", href:"angel-cam.html" },
+    { id:"link-0001", type:"link", title:"Control Terminal",              tag:["terminal","hidden","command"], date:"2026-03-11", href:"terminal.html" },
+    { id:"link-0002", type:"link", title:"Entry / Home",                  tag:["home","entry"],                date:"2026-03-11", href:"index.html" },
   ];
 
   const list = $("list");
@@ -224,12 +268,12 @@
     switch(cmd.toLowerCase()){
       case "help":
         tprint("commands:");
-        tprint("  help            show this help");
-        tprint("  open <page>      open page: home / files / about");
-        tprint("  clear           clear terminal output");
-        tprint("  status          show system status");
-        tprint("  theme           toggle accent (alert <-> ok)");
-        tprint("  ping            beep test");
+        tprint("  help               show this help");
+        tprint("  open <page>        home / files / about / visitor / terminal / route / stage / cam");
+        tprint("  clear              clear terminal output");
+        tprint("  status             show system status");
+        tprint("  theme [alert|ok]   toggle or set accent mode");
+        tprint("  ping               beep test");
         beep(880, 60, "square", 0.03);
         break;
 
@@ -243,10 +287,14 @@
           "about":"about.html",
           "visitors":"visitor.html",
           "visitor":"visitor.html",
+          "terminal":"terminal.html",
+          "route":"stage-route-map.html",
+          "map":"stage-route-map.html",
+          "stage":"stage-layer-map.html",
+          "console":"stage-layer-map.html",
           "cam":"angel-cam.html",
           "camera":"angel-cam.html",
           "live":"angel-cam.html",
-          "stage":"stage-route-map.html",
         };
         const to = map[k];
         if(!to){
@@ -272,11 +320,18 @@
         beep(660, 55, "square", 0.02);
         break;
 
-      case "theme":
-        toggleTheme();
-        tprint("theme toggled");
+      case "theme": {
+        const mode = arg.toLowerCase();
+        if(mode === "alert" || mode === "ok"){
+          setTheme(mode);
+          tprint(`theme set: ${mode}`);
+        } else {
+          toggleTheme();
+          tprint(`theme toggled: ${document.documentElement.getAttribute("data-accent") || "alert"}`);
+        }
         beep(520, 55, "square", 0.03);
         break;
+      }
 
       case "ping":
         tprint("beep");
@@ -287,25 +342,6 @@
         tprint("unknown command. type: help");
         beep(240, 120, "sawtooth", 0.02);
         break;
-    }
-  }
-
-  function toggleTheme(){
-    // very small theme tweak: swap alert/warn to ok-ish.
-    const root = document.documentElement;
-    const cur = root.style.getPropertyValue("--alert");
-    if(cur){
-      // already set inline
-    }
-    const mode = root.getAttribute("data-accent") || "alert";
-    if(mode === "alert"){
-      root.setAttribute("data-accent","ok");
-      root.style.setProperty("--alert", "#2bff9a");
-      root.style.setProperty("--warn", "#7cc3ff");
-    } else {
-      root.setAttribute("data-accent","alert");
-      root.style.setProperty("--alert", "#ff2a2a");
-      root.style.setProperty("--warn", "#ff7a18");
     }
   }
 
